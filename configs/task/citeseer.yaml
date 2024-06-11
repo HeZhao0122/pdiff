@@ -1,0 +1,46 @@
+name: nodecft
+
+data:
+  data_root: data/CiteSeer
+  dataset: CiteSeer
+  seed: 44
+
+# model for data
+model:
+  _target_: models.nodecft.BaseGraph
+  in_feat: 3703
+  hidden_dim: 50
+  num_class: 6
+  aggr: 'gat'
+  layers: 3
+
+# optimizer for training task model
+optimizer:
+  _target_: torch.optim.SGD
+  lr: 0.05
+  momentum: 0.95
+  weight_decay: 0.0005
+
+# lr scheduler for training task optimizer
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [50，100]
+  gamma: 0.2
+
+epoch: 200
+save_num_model: 25
+train_layer: 'all'
+# train_layer: ['conv_layers.0.att_src', 'conv_layers.0.att_dst', 'conv_layers.0.bias', 'conv_layers.0.lin.weight', 'conv_layers.1.att_src', 'conv_layers.1.att_dst', 'conv_layers.1.bias', 'conv_layers.1.lin.weight', ]
+# train_layer: ['out.bias', 'out.lin.weight']
+
+# parameter data root
+param:
+  data_root: param_data/PubMed/data.pt
+  k: 25
+  token_length: 256
+  num_workers: 4
+  num_encoder_latents: 8
+  dim_ae: 32
+  train_list: ['PubMed', 'CiteSeer']
+  test_list: ['PubMed', 'CiteSeer', 'Cora']
+

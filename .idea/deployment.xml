@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="zhaohe@172.21.47.96:22 key">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zhaohe/NNDF" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="zhaohe@172.21.47.97:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/zhaohe/NNDF" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>

@@ -1,0 +1,41 @@
+name: graphcft
+
+data:
+  data_root: data/MUTAG
+  dataset: MUTAG
+  batch_size: 16
+  num_workers: 1
+  seed: 46
+
+# model for data
+model:
+  _target_: models.graphcft.BaseGraph
+  in_feat: 7
+  hidden_dim: 32
+  num_class: 2
+  aggr: 'gat'
+  layers: 3
+
+# optimizer for training task model
+optimizer:
+  _target_: torch.optim.SGD
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 0.0005
+
+# lr scheduler for training task optimizer
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [10, 20]
+  gamma: 0.2
+
+epoch: 30
+save_num_model: 50
+train_layer: 'all'
+# train_layer: [ 'conv_layers.1.att_src', 'conv_layers.1.att_dst', 'conv_layers.1.bias', 'conv_layers.1.lin.weight', 'out.weight', 'out.bias']
+
+# parameter data root
+param:
+  data_root: param_data/MUTAG/data.pt
+  k: 50
+  num_workers: 4

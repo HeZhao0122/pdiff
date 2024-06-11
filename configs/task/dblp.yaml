@@ -1,0 +1,39 @@
+name: nodecft
+
+data:
+  data_root: data/DBLP
+  dataset: DBLP
+  seed: 48
+
+# model for data
+model:
+  _target_: models.nodecft.BaseGraph
+  in_feat: 1639
+  hidden_dim: 64
+  num_class: 4
+  aggr: 'gat'
+  layers: 3
+
+# optimizer for training task model
+optimizer:
+  _target_: torch.optim.SGD
+  lr: 0.01
+  momentum: 0.9
+  weight_decay: 0.0005
+
+# lr scheduler for training task optimizer
+lr_scheduler:
+  _target_: torch.optim.lr_scheduler.MultiStepLR
+  milestones: [50，100]
+  gamma: 0.2
+
+epoch: 200
+save_num_model: 50
+# train_layer: 'all'
+train_layer: ['conv_layers.1.att_src', 'conv_layers.1.att_dst', 'conv_layers.1.bias', 'conv_layers.1.lin.weight', 'out.att_src', 'out.att_dst', 'out.bias', 'out.lin.weight']
+
+# parameter data root
+param:
+  data_root: param_data/DBLP/data.pt
+  k: 50
+  num_workers: 4
