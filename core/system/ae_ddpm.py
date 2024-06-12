@@ -65,7 +65,7 @@ class AE_DDPM(DDPM):
 
     def training_step(self, batch, batch_idx, **kwargs):
         ddpm_optimizer, ae_optimizer = self.configure_optimizers()
-        param, mask, enc, label = batch
+        param, mask, enc, label,_ = batch
         if self.current_epoch < self.split_epoch:
             loss = self.ae_forward((param, mask), **kwargs)
             ae_optimizer.zero_grad()
