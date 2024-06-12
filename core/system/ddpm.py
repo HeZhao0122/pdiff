@@ -109,7 +109,7 @@ class DDPM(BaseSystem):
     def validation_step(self, pbatch, batch_idx, **kwargs: Any):
         cond = pbatch[2][:10]
         batch = pbatch[0][:10]
-        mask = pbatch[1].float().reshape(batch.shape)
+        # mask = pbatch[1].float().reshape(batch.shape)
         labels = pbatch[3]
         dims = pbatch[4][:10]
         print(f"Input label: {labels[:10]}")
@@ -151,7 +151,7 @@ class DDPM(BaseSystem):
         cond = pbatch[2]
         batch = pbatch[0]
         labels = pbatch[3]
-        mask = pbatch[1].float().reshape(batch.shape)
+        # mask = pbatch[1].float().reshape(batch.shape)
         dims = pbatch[4]
 
         batch = self.pre_process(batch)
