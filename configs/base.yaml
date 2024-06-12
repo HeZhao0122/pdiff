@@ -1,5 +1,5 @@
 defaults:
-  - task: cora
+  - task: PubMed
   - system: autoencoder
   - _self_
 
@@ -15,7 +15,7 @@ seed: 45
 iter_seed: 3
 process_title: p-diff
 
-output_dir: outputs/cora
+output_dir: outputs/PubMed
 
 hydra:
   output_subdir: config
