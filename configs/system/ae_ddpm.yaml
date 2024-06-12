@@ -90,7 +90,7 @@ model_var_type: fixedlarge
 loss_type: mse
 
 train:
-  split_epoch: 0
+  split_epoch: 1
   datasets: ['PubMed', 'CiteSeer', 'Cora']
   fine_tune_epoch: 2400
   generate_epoch: 200
