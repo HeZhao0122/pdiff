@@ -72,7 +72,7 @@ def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
                         dim_sets += [dim] * param.shape[0]
         # data_param = torch.cat(data_param, dim=0)
         dims += dim_sets
-        label = torch.tensor([idx]*sum([len(p.shape[0] for p in data_param)]))
+        label = torch.tensor([idx]*sum([len(p.shape[0]) for p in data_param]))
         print(f'{dataset}: {statistics.mean(data_performance)}')
         all_param += data_param
         all_label.append(label)
