@@ -241,4 +241,3 @@ dependencies:
     - widgetsnbextension==4.0.9
     - yarl==1.9.3
     - zipp==3.17.0
-prefix: /home/zhaohe/anaconda3/envs/pdiff
