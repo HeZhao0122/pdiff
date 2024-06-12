@@ -10,6 +10,7 @@ from .base import DataBase
 from torch.utils.data import Dataset, DataLoader
 import warnings
 import os
+from torch_geometric import datasets
 
 class PData(DataBase):
     def __init__(self, cfg, **kwargs):
@@ -57,12 +58,15 @@ class PData(DataBase):
         masks = []
         hidden_dim = []
         for i in range(len(datasets)):
+            graph = load(datasets[i])
+            feature_size = graph.x.shape[1]
+            class_num = max(graph.y) + 1
             label = torch.tensor([i]*num*len(test_dim))
             labels.append(label)
             mask = torch.cat([torch.ones([label.shape[0], test_shape[i]]), torch.zeros((label.shape[0], self.pdata.shape[1]- test_shape[i]))], dim=-1)
             masks.append(mask)
             for dim in test_dim:
-                hidden_dim += [dim]*num
+                hidden_dim += [[dim, feature_size, class_num] for _ in range(num)]
 
         labels = torch.cat(labels)
         masks = torch.cat(masks, dim=0)
@@ -173,21 +177,14 @@ class Parameters(VisionDataset):
         return len(self.data)
 
 
-# class Parameters(Dataset):
-#     def __init__(self, batch, k, split='train'):
-#         super(Parameters, self).__init__()
-#         if split  == 'train':
-#             self.data = batch
-#         else:
-#             self.data = batch
-#         self.batch_size = k
-#         # data is a tensor list which is the parameters of the model
-#
-#     def __getitem__(self, item):
-#         return self.data[item*self.batch_size:(item+1)*self.batch_size]
-#
-#     def __len__(self) -> int:
-#         return int(len(self.data)/self.batch_size)
+def load(name):
+    data_cls = {
+        'PubMed': datasets.Planetoid(root=f'./data/PubMed', name='PubMed'),
+        'DBLP': datasets.CitationFull(root=f'./data/DBLP', name='DBLP'),
+        'CiteSeer': datasets.Planetoid(root=f'./data/CiteSeer', name='CiteSeer'),
+        'Cora': datasets.Planetoid(root=f'./data/Cora', name='Cora')
+    }
+    return data_cls[name][0]
 
 
 

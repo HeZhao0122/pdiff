@@ -4,8 +4,18 @@ import numpy as np
 import torch
 import statistics
 from tqdm import tqdm
-
+from torch_geometric import datasets
 device = 'cpu'
+
+def load(name):
+    data_cls = {
+        'PubMed': datasets.Planetoid(root=f'./data/PubMed', name='PubMed'),
+        'DBLP': datasets.CitationFull(root=f'./data/DBLP', name='DBLP'),
+        'CiteSeer': datasets.Planetoid(root=f'./data/CiteSeer', name='CiteSeer'),
+        'Cora': datasets.Planetoid(root=f'./data/Cora', name='Cora')
+    }
+    return data_cls[name][0]
+
 
 def load_params(dataset, lr, m, seed, hidden_dim):
     path = f'./param_data/{dataset}/all_seed_all/{seed}/{hidden_dim}_{lr}_{m}/data.pt'
@@ -59,6 +69,9 @@ def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
     length = []
     dims = []
     for idx, dataset in enumerate(dataset_list):
+        graph = load(dataset)
+        feature_size = graph.x.shape[1]
+        class_num = max(graph.y) + 1
         data_param = []
         data_performance = []
         dim_sets = []
@@ -71,7 +84,7 @@ def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
                         data_performance.append(performance[1])
                         dim_sets += [dim] * param.shape[0]
         # data_param = torch.cat(data_param, dim=0)
-        dims += dim_sets
+        dims += [[d, feature_size, class_num] for d in dim_sets]
         label = torch.tensor([idx]*sum([p.shape[0] for p in data_param]))
         print(f'{dataset}: {statistics.mean(data_performance)}')
         all_param += data_param
@@ -113,6 +126,6 @@ lrs = [0.1, 0.05]
 momentum = [0.9, 0.95]
 seeds = [0,1,2]
 hidden_dims = [32, 50, 64]
-datasets = ['PubMed',]
-merge_all(datasets, lrs, momentum, seeds, hidden_dims)
+dataset_list = ['PubMed',]
+merge_all(dataset_list, lrs, momentum, seeds, hidden_dims)
 # merge_dataset(dataset, seed_num)

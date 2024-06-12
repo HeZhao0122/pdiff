@@ -101,7 +101,7 @@ class AE_DDPM(DDPM):
         batch = pbatch[0]
         mask = pbatch[1]
         labels = pbatch[3]
-        dims = pbatch[4]
+        dims = pbatch[4][:, 0]
         # batch = batch.view(batch.shape[0], -1)[:, :self.in_dim]
         if self.current_epoch < self.split_epoch:
             # todo

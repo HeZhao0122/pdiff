@@ -1512,16 +1512,19 @@ class TF(nn.Module):
             # Swish(),
             # linear(in_dim, in_dim),
         )
-        self.cond_emb = nn.Linear(cond_dim, self.len_token)
+        self.cond_emb = nn.Sequential(nn.Linear(cond_dim, self.len_token), nn.Tanh())
+        self.share_emb = nn.Sequential(nn.Linear(3, self.len_token), nn.Tanh())
         # self.out_decode = nn.Linear(self.len_token * 2, self.len_token)
 
     def forward(self, input, time, cond=None):
         # import pdb; pdb.set_trace()
         # time_embed = self.time(time) # + self.label_emb(cond)
         input_view_shape = input.shape
-        cond = self.cond_emb(cond)
+        cond = self.cond_emb(cond[0])
+        shape_cond = self.share_emb(cond[1])
         # cond_emb = repeat(self.cond_emb(cond),'b d -> b n d', n=input.shape[1])
         cond_emb = cond.reshape(input_view_shape[0], -1, self.len_token)
+        shape_cond = shape_cond.reshape(input_view_shape[0], -1, self.len_token)
         # input = input + cond_emb
         # input =torch.cat((input, cond_emb), dim=-1)
         # if self.self_cond:
@@ -1532,7 +1535,7 @@ class TF(nn.Module):
         # import pdb; pdb.set_trace()
         time_emb = self.time_encode(time)
         time_emb_rs = time_emb.reshape(input_view_shape[0], 1, self.len_token)
-        emb_enc1 = self.enc(input_seq + time_emb_rs + cond_emb)
+        emb_enc1 = self.enc(input_seq + time_emb_rs + cond_emb + shape_cond)
         # print('time_emb.shape', time_emb.shape)
         # print('emb_enc1.shape', emb_enc1.shape)
         out_dec1 = self.dec(emb_enc1, emb_enc1)

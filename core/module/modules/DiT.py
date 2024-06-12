@@ -194,6 +194,7 @@ class DiT(nn.Module):
         self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
         self.initialize_weights()
         self.cond_embedder = nn.Sequential(nn.Linear(cond_dim, hidden_size), nn.Tanh())
+        self.shape_embedder = nn.Sequential(nn.Linear(3, hidden_size), nn.Tanh())
 
     def initialize_weights(self):
         # Initialize transformer layers:
@@ -268,11 +269,12 @@ class DiT(nn.Module):
         input_shape = x.shape
         # x = self.latent_enc(x.reshape(input_shape[0], -1)).reshape(input_shape)
         x = x.reshape(input_shape[0], 1, -1)
-        cond = self.cond_embedder(cond)
+        cond = self.cond_embedder(cond[0])
+        shape_emb = self.shape_embedder(cond[1])
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)  # (N, D)
         # y = self.y_embedder(y, self.training)  # (N, D)
-        c = t + cond # (N, D)
+        c = t + cond + shape_emb # (N, D)
         for block in self.blocks:
             x = block(x, c)  # (N, T, D)
         x = self.final_layer(x, c)  # (N, T, patch_size ** 2 * out_channels)

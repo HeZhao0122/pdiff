@@ -114,7 +114,7 @@ class DDPM(BaseSystem):
         dims = pbatch[4][:10]
         print(f"Input label: {labels[:10]}")
         batch = self.pre_process(batch)
-        outputs = self.generate(batch, cond, 10)
+        outputs = self.generate(batch, (cond,dims), 10)
         # shape_latent = self.pre_process(mask)[:10]
 
         params = self.post_process(outputs)
@@ -156,7 +156,7 @@ class DDPM(BaseSystem):
 
         batch = self.pre_process(batch)
         # shape_latent = self.pre_process(mask)
-        outputs = self.generate(batch, cond, batch.shape[0])
+        outputs = self.generate(batch, (cond,dims), batch.shape[0])
         params = self.post_process(outputs)
         accs = []
         for i in range(params.shape[0]):
