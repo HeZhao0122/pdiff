@@ -133,7 +133,7 @@ def main():
     pos_pair, neg_pair = get_pos_neg_pair(encodings, latents, num=75)
     train_data = ContrastivePair(pos_pair, neg_pair)
     train_loader = DataLoader(train_data, batch_size=50, num_workers=1, shuffle=True, persistent_workers=True)
-    model = train(train_loader, epochs=300, lr=0.01, in_dim=in_size, latent_dim=512, device=device)
+    model = train(train_loader, epochs=100, lr=0.01, in_dim=in_size, latent_dim=512, device=device)
     target_graph_enc = ['PubMed', 'CiteSeer', 'Cora']
     graph_encodings, _ = get_graph_enc(target_graph_enc, device)
     for idx, dataset in enumerate(target_graph_enc):
