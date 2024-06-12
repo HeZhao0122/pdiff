@@ -25,7 +25,7 @@ model:
 optimizer:
   _target_: torch.optim.SGD
   lr: 0.1
-  momentum: 0.95
+  momentum: 0.9
   weight_decay: 0.0005
 
 # lr scheduler for training task optimizer
