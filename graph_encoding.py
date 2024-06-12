@@ -121,7 +121,7 @@ def main(name):
     np.random.seed(1)
     path = f'./param_data/{name}/deep_encoding.pt'
     data = load(name)
-    F_feature = linear_embedding(data, hidden_size=256)
+    F_feature = linear_embedding(data, hidden_size=512)
     torch.save(F_feature, path)
     print(f'{name} Done')
 
