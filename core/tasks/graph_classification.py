@@ -282,7 +282,7 @@ class NodeCFT(BaseTask):
 
     def test_g_model(self, input, hidden_dim=None):
         if hidden_dim:
-            self.cfg.model.hidden_dim = hidden_dim
+            self.cfg.model.hidden_dim = int(hidden_dim)
             net = self.build_model()
             # import pdb;pdb.set_trace()
         else:
@@ -328,7 +328,7 @@ class NodeCFT(BaseTask):
 
     def val_g_model(self, input, hidden_dim=None):
         if hidden_dim:
-            self.cfg.model.hidden_dim = hidden_dim
+            self.cfg.model.hidden_dim = int(hidden_dim)
             net = self.build_model()
         # import pdb;pdb.set_trace()
         else:
