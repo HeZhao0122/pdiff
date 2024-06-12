@@ -58,9 +58,9 @@ class ContrastivePair(Dataset):
 
 
 def load_latent(root, device='cpu'):
-    latents = torch.load(os.path.join(root, 'latent.pt'), map_location=device)
+    latents = torch.load(os.path.join(root, 'latent_all.pt'), map_location=device)
     latents = latents.view(latents.shape[0], -1)
-    labels = torch.load(os.path.join(root, 'labels.pt'), map_location=device)
+    labels = torch.load(os.path.join(root, 'labels_all.pt'), map_location=device)
     dataset_num = int(torch.max(labels)) + 1
     res = [[] for _ in range(dataset_num)]
     for idx, l in enumerate(labels):
