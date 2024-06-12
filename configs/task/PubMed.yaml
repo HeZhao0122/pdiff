@@ -52,3 +52,4 @@ param:
   train_list: ['PubMed', 'CiteSeer',]
   test_list: ['PubMed', 'CiteSeer', 'Cora']
   test_shape: [36681, 241874, 96661]
+  test_dim: [32,50,64,16]
