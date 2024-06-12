@@ -24,7 +24,7 @@ model:
 # optimizer for training task model
 optimizer:
   _target_: torch.optim.SGD
-  lr: 0.05
+  lr: 0.1
   momentum: 0.9
   weight_decay: 0.0005
 
