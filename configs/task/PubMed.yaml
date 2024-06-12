@@ -49,7 +49,7 @@ param:
   num_workers: 4
   num_encoder_latents: 8
   dim_ae: 64
-  train_list: ['PubMed', 'CiteSeer',]
+  train_list: ['PubMed',]
   test_list: ['PubMed', 'CiteSeer', 'Cora']
   test_shape: [36681, 241874, 96661]
   test_dim: [32,50,64,16]

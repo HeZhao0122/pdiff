@@ -90,7 +90,7 @@ model_var_type: fixedlarge
 loss_type: mse
 
 train:
-  split_epoch: 1
+  split_epoch: 0
   datasets: ['PubMed', 'CiteSeer', 'Cora']
   fine_tune_epoch: 2400
   generate_epoch: 200
@@ -111,7 +111,7 @@ train:
     _convert_: all
     max_epochs: 10000
     check_val_every_n_epoch:
-    val_check_interval : 1200
+    val_check_interval : 1800
     log_every_n_steps: 8
     limit_val_batches: 1
     limit_test_batches: 1

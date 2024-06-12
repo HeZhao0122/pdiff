@@ -113,6 +113,6 @@ lrs = [0.1, 0.05]
 momentum = [0.9, 0.95]
 seeds = [0,1,2]
 hidden_dims = [32, 50, 64]
-datasets = ['PubMed', 'CiteSeer',]
+datasets = ['PubMed',]
 merge_all(datasets, lrs, momentum, seeds, hidden_dims)
 # merge_dataset(dataset, seed_num)
