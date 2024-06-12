@@ -91,7 +91,7 @@ loss_type: mse
 
 train:
   split_epoch: 0
-  datasets: ['PubMed', 'CiteSeer', 'Cora']
+  datasets: ['PubMed',]
   fine_tune_epoch: 2400
   generate_epoch: 200
   optimizer:
