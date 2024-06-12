@@ -44,7 +44,7 @@ def merge_dataset(dataset, seed_num):
 def load_state_dict(dataset_list):
     state_dict = {}
     for idx, dataset in enumerate(dataset_list):
-        path = f'./param_data/{dataset}/all_seed_all/0/0.1_0.9/data.pt'
+        path = f'./param_data/{dataset}/all_seed_all/0/64_0.1_0.9/data.pt'
         state = torch.load(path, map_location=torch.device(device))
         state_dict['train_layer'] = state['train_layer']
         state_dict[dataset] = state['model']
