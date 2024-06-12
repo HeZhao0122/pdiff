@@ -119,7 +119,7 @@ def test(net, x, label, mask):
 
 def main(name):
     np.random.seed(1)
-    path = f'./param_data/{name}knn_encoding.pt'
+    path = f'./param_data/{name}/knn_encoding.pt'
     data = load(name)
     # F_feature = linear_embedding(data, hidden_size=512)
     F_feature = knn_transform(data)
