@@ -9,7 +9,7 @@ data:
 model:
   _target_: models.nodecft.BaseGraph
   in_feat: 500
-  hidden_dim: 32
+  hidden_dim: 64
   num_class: 3
   aggr: 'gat'
   layers: 3
