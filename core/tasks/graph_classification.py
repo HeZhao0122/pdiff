@@ -528,10 +528,10 @@ class NodeCFT(BaseTask):
         # print(f'noised test loss: {n_test}')
         # print(f'performance decrease: {test_acc-sum(n_acc)/len(n_acc)}')
 
-        t_acc = self.transfer_test(net, criterion, self.test_mask, train_layer)
-        print(f'best transfer acc: {max(t_acc)}')
-        print(f'transfer mean acc: {statistics.mean(t_acc)}')
-        print(f'transfer test loss: {statistics.median(t_acc)}')
+        # t_acc = self.transfer_test(net, criterion, self.test_mask, train_layer)
+        # print(f'best transfer acc: {max(t_acc)}')
+        # print(f'transfer mean acc: {statistics.mean(t_acc)}')
+        # print(f'transfer test loss: {statistics.median(t_acc)}')
 
         # check the memory of p_data
         useage_gb = get_storage_usage(tmp_path)
