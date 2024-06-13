@@ -72,7 +72,7 @@ class AE_DDPM(DDPM):
             self.manual_backward(loss)
             ae_optimizer.step()
         else:
-            loss = self.forward((param, enc, mask), **kwargs)
+            loss = self.forward((param, enc, shapes), **kwargs)
             ddpm_optimizer.zero_grad()
             self.manual_backward(loss)
             ddpm_optimizer.step()

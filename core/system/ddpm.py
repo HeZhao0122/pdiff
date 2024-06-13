@@ -115,7 +115,7 @@ class DDPM(BaseSystem):
         print(f"Input label: {labels[:10]}")
         batch = self.pre_process(batch)
         shape_latent = self.pre_process(mask)[:10]
-        outputs = self.generate(batch, (cond,shape_latent), 10)
+        outputs = self.generate(batch, (cond,dims), 10)
 
         params = self.post_process(outputs * shape_latent)
         params = params.cpu()
@@ -156,7 +156,7 @@ class DDPM(BaseSystem):
 
         batch = self.pre_process(batch)
         shape_latent = self.pre_process(mask)
-        outputs = self.generate(batch, (cond,shape_latent), batch.shape[0])
+        outputs = self.generate(batch, (cond, dims), batch.shape[0])
         params = self.post_process(outputs * shape_latent)
         accs = []
         for i in range(params.shape[0]):
@@ -185,15 +185,15 @@ class DDPM(BaseSystem):
         return {'best_g_acc': best_acc, 'mean_g_acc': np.mean(accs).item(), 'med_g_acc': np.median(accs).item()}
 
     def forward(self, pbatch, **kwargs):
-        batch, cond, mask = pbatch
-        mask = mask.float().reshape(batch.shape)
+        batch, cond, shapes = pbatch
+        # mask = mask.float().reshape(batch.shape)
         batch = self.pre_process(batch)
-        shape_info = self.pre_process(mask)
+        # shape_info = self.pre_process(mask)
         model = self.model
         time = (torch.rand(batch.shape[0]) * self.n_timestep).type(torch.int64).to(batch.device)
 
         noise = None
-        lab = (cond, shape_info)
+        lab = (cond, shapes)
         if noise is None:
             noise = torch.randn_like(batch)
         x_t = self.q_sample(batch, time, noise=noise)
