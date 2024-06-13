@@ -1535,7 +1535,7 @@ class TF(nn.Module):
         # import pdb; pdb.set_trace()
         time_emb = self.time_encode(time)
         time_emb_rs = time_emb.reshape(input_view_shape[0], 1, self.len_token)
-        emb_enc1 = self.enc(input_seq + time_emb_rs + cond_emb + shape_cond)
+        emb_enc1 = self.enc(input_seq + time_emb_rs + shape_cond)
         # print('time_emb.shape', time_emb.shape)
         # print('emb_enc1.shape', emb_enc1.shape)
         out_dec1 = self.dec(emb_enc1, emb_enc1)
