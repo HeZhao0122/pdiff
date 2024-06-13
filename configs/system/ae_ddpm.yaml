@@ -96,12 +96,12 @@ train:
   generate_epoch: 200
   optimizer:
     _target_: torch.optim.AdamW
-    lr: 1e-3
+    lr: 1e-2
     weight_decay: 2e-5
 
   ae_optimizer:
     _target_: torch.optim.AdamW
-    lr: 5e-2
+    lr: 1e-3
     weight_decay: 2e-6
 
   lr_scheduler:
