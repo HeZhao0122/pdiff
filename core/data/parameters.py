@@ -169,9 +169,7 @@ class Parameters(VisionDataset):
         self.data = data
 
     def __getitem__(self, item):
-        if self.mask is not None:
-            return self.data[item], self.mask[item], self.enc[item], self.label[item], self.hidden_dim[item]
-        return self.data[item], self.enc[item], self.label[item], self.hidden_dim[item]
+        return self.data[item], self.mask[item], self.enc[item], self.label[item], self.hidden_dim[item]
 
     def __len__(self) -> int:
         return len(self.data)
