@@ -185,13 +185,13 @@ class DDPM(BaseSystem):
         return {'best_g_acc': best_acc, 'mean_g_acc': np.mean(accs).item(), 'med_g_acc': np.median(accs).item()}
 
     def forward(self, pbatch, **kwargs):
-        batch, cond = pbatch
+        batch, cond, shapes = pbatch
         batch = self.pre_process(batch)
         model = self.model
         time = (torch.rand(batch.shape[0]) * self.n_timestep).type(torch.int64).to(batch.device)
 
         noise = None
-        lab = cond
+        lab = (cond, shapes)
         if noise is None:
             noise = torch.randn_like(batch)
         x_t = self.q_sample(batch, time, noise=noise)

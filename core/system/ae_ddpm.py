@@ -28,8 +28,8 @@ class AE_DDPM(DDPM):
         # config.system.model.arch.model.in_dim = latent_dim[-1] * latent_dim[-2]
         super(AE_DDPM, self).__init__(config)
         # self.pos = self.task.get_pos().unsqueeze(0).float().cuda()
-        # self.ae_model = torch.load('./param_data/AE_all.pt', map_location='cpu')
-        self.ae_model = ae_model
+        self.ae_model = torch.load('./param_data/AE_all.pt', map_location='cpu')
+        # self.ae_model = ae_model
         self.save_hyperparameters()
         self.split_epoch = self.train_cfg.split_epoch
         self.dataset_list = self.train_cfg.datasets
@@ -65,14 +65,14 @@ class AE_DDPM(DDPM):
 
     def training_step(self, batch, batch_idx, **kwargs):
         ddpm_optimizer, ae_optimizer = self.configure_optimizers()
-        param, mask, enc, label,_ = batch
+        param, mask, enc, label, shapes = batch
         if self.current_epoch < self.split_epoch:
             loss = self.ae_forward((param, mask), **kwargs)
             ae_optimizer.zero_grad()
             self.manual_backward(loss)
             ae_optimizer.step()
         else:
-            loss = self.forward((param, enc), **kwargs)
+            loss = self.forward((param, enc, shapes), **kwargs)
             ddpm_optimizer.zero_grad()
             self.manual_backward(loss)
             ddpm_optimizer.step()
