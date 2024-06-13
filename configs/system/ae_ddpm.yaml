@@ -68,9 +68,9 @@ model:
         input_size: 512
         patch_size: 4
         in_channels: 1
-        hidden_size: 384
+        hidden_size: 768
         depth: 12
-        num_heads: 6
+        num_heads: 12
         mlp_ratio: 4.0
         learn_sigma: False
 
