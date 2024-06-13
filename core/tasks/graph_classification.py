@@ -281,7 +281,7 @@ class NodeCFT(BaseTask):
         return param_data.get_param_dim()
 
     def test_g_model(self, input, hidden_dim=None):
-        if hidden_dim:
+        if hidden_dim is not None:
             self.cfg.model.hidden_dim = int(hidden_dim)
             net = self.build_model()
             # import pdb;pdb.set_trace()
@@ -327,7 +327,7 @@ class NodeCFT(BaseTask):
         return acc, test_loss, output_list
 
     def val_g_model(self, input, hidden_dim=None):
-        if hidden_dim:
+        if hidden_dim is not None:
             self.cfg.model.hidden_dim = int(hidden_dim)
             net = self.build_model()
         # import pdb;pdb.set_trace()

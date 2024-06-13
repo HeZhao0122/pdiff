@@ -124,7 +124,7 @@ class DDPM(BaseSystem):
         target_acc = []
         for i in range(params.shape[0]):
             param = params[i].to(batch.device).view(-1)
-            acc, test_loss, output_list = self.task_val_func(param, dims[i])
+            acc, test_loss, output_list = self.task_val_func(param, dims[i][0])
             accs.append(acc)
             if int(labels[i]) == 0:
                 target_acc.append(acc)
@@ -161,7 +161,7 @@ class DDPM(BaseSystem):
         accs = []
         for i in range(params.shape[0]):
             param = params[i].view(-1)
-            acc, test_loss, output_list = self.task_func(param, dims[i])
+            acc, test_loss, output_list = self.task_func(param, dims[i][0])
             accs.append(acc)
 
         lists = {dataset: [] for dataset in self.dataset_list}
