@@ -113,6 +113,7 @@ class AE_DDPM(DDPM):
                 param = param.view(-1)[:self.in_dim]
                 acc, test_loss, output_list = self.task_val_func(param, good_dim[i])
                 input_accs.append(acc)
+
             print("input model accuracy:{}".format(input_accs))
 
             """
@@ -120,6 +121,7 @@ class AE_DDPM(DDPM):
             """
             print('---------------------------------')
             print('Test the AE model')
+            print(f'Hidden dim: {good_dim}')
             ae_rec_accs = []
             # latent, ae_params = self.ae_model.reconstruct(good_param)
             latent = self.ae_model.encode(good_param)
