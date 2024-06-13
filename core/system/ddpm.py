@@ -186,8 +186,8 @@ class DDPM(BaseSystem):
 
     def forward(self, pbatch, **kwargs):
         batch, cond, mask = pbatch
+        mask = mask.float().reshape(batch.shape)
         batch = self.pre_process(batch)
-        mask = mask.reshape(batch.shape)
         shape_info = self.pre_process(mask)
         model = self.model
         time = (torch.rand(batch.shape[0]) * self.n_timestep).type(torch.int64).to(batch.device)
