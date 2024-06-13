@@ -109,15 +109,15 @@ class DDPM(BaseSystem):
     def validation_step(self, pbatch, batch_idx, **kwargs: Any):
         cond = pbatch[2][:10]
         batch = pbatch[0][:10]
-        # mask = pbatch[1].float().reshape(batch.shape)
+        mask = pbatch[1].float().reshape(batch.shape)
         labels = pbatch[3]
         dims = pbatch[4][:10]
         print(f"Input label: {labels[:10]}")
         batch = self.pre_process(batch)
         outputs = self.generate(batch, (cond,dims), 10)
-        # shape_latent = self.pre_process(mask)[:10]
+        shape_latent = self.pre_process(mask)[:10]
 
-        params = self.post_process(outputs)
+        params = self.post_process(outputs * shape_latent)
         params = params.cpu()
 
         accs = []
@@ -151,13 +151,13 @@ class DDPM(BaseSystem):
         cond = pbatch[2]
         batch = pbatch[0]
         labels = pbatch[3]
-        # mask = pbatch[1].float().reshape(batch.shape)
+        mask = pbatch[1].float().reshape(batch.shape)
         dims = pbatch[4]
 
         batch = self.pre_process(batch)
-        # shape_latent = self.pre_process(mask)
+        shape_latent = self.pre_process(mask)
         outputs = self.generate(batch, (cond,dims), batch.shape[0])
-        params = self.post_process(outputs)
+        params = self.post_process(outputs * shape_latent)
         accs = []
         for i in range(params.shape[0]):
             param = params[i].view(-1)
