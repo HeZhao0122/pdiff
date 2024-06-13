@@ -59,7 +59,7 @@ model:
 #      latent_dim: 32
       _target_: core.module.modules.unet.TF
       in_dim: 12
-      cond_dim: 512
+      cond_dim: 256
       latent_dim: 64
       ff_dim: 512
       num_layers: 3
