@@ -90,7 +90,7 @@ model_var_type: fixedlarge
 loss_type: mse
 
 train:
-  split_epoch: 800
+  split_epoch: 1200
   datasets: ['PubMed',]
   fine_tune_epoch: 2400
   generate_epoch: 200
@@ -101,7 +101,7 @@ train:
 
   ae_optimizer:
     _target_: torch.optim.AdamW
-    lr: 1e-2
+    lr: 5e-2
     weight_decay: 2e-6
 
   lr_scheduler:
