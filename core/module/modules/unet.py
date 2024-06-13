@@ -1521,16 +1521,16 @@ class TF(nn.Module):
         # time_embed = self.time(time) # + self.label_emb(cond)
         input_view_shape = input.shape
         cond_emb = self.cond_emb(cond[0])
-        shape_cond = self.shape_emb(cond[1])
         # cond_emb = repeat(self.cond_emb(cond),'b d -> b n d', n=input.shape[1])
         cond_emb = cond_emb.reshape(input_view_shape[0], -1, self.len_token)
-        shape_cond = shape_cond.reshape(input_view_shape[0], -1, self.len_token)
+        # shape_cond = shape_cond.reshape(input_view_shape[0], -1, self.len_token)
         # input = input + cond_emb
         # input =torch.cat((input, cond_emb), dim=-1)
         # if self.self_cond:
         #     x_self_cond = default(cond, lambda: torch.zeros_like(input))
         #     input = input - x_self_cond
         input_seq = input.reshape(input_view_shape[0], -1, self.len_token)
+        shape_cond = cond[1].reshape(input_view_shape[0], -1, self.len_token)
 
         # import pdb; pdb.set_trace()
         time_emb = self.time_encode(time)
