@@ -111,7 +111,7 @@ train:
     _convert_: all
     max_epochs: 10000
     check_val_every_n_epoch:
-    val_check_interval : 900
+    val_check_interval : 600
     log_every_n_steps: 8
     limit_val_batches: 1
     limit_test_batches: 1
