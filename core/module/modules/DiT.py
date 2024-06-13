@@ -269,12 +269,12 @@ class DiT(nn.Module):
         input_shape = x.shape
         # x = self.latent_enc(x.reshape(input_shape[0], -1)).reshape(input_shape)
         x = x.reshape(input_shape[0], 1, -1)
-        # cond_emb = self.cond_embedder(cond[0])
+        cond_emb = self.cond_embedder(cond[0])
         shape_emb = self.shape_embedder(cond[1])
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)  # (N, D)
         # y = self.y_embedder(y, self.training)  # (N, D)
-        c = t + shape_emb # (N, D)
+        c = t + cond_emb + shape_emb # (N, D)
         for block in self.blocks:
             x = block(x, c)  # (N, T, D)
         x = self.final_layer(x, c)  # (N, T, patch_size ** 2 * out_channels)
