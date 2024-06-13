@@ -34,7 +34,7 @@ class PData(DataBase):
             self.fix_model.requires_grad_(False)
 
             self.pdata = state['pdata']
-            self.hidden_dims = state['hidden_dim']
+            self.hidden_dims = state['hidden_dim'].float()
             self.mask = state['mask']
             self.label = state['label']
             self.accuracy = state['performance']
@@ -70,7 +70,7 @@ class PData(DataBase):
 
         labels = torch.cat(labels)
         masks = torch.cat(masks, dim=0)
-        hidden_dim = torch.tensor(hidden_dim)
+        hidden_dim = torch.tensor(hidden_dim).float()
         enc = self.get_graph_enc(datasets)
         test_pdata = torch.randn((labels.shape[0], self.pdata.shape[1]))
         encs = self.transform_latent(enc, labels)
