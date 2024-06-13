@@ -342,7 +342,7 @@ class NodeCFT(BaseTask):
                 target_num += torch.numel(module)
         params_num = torch.squeeze(param).shape[0]  # + 30720
         # assert (target_num == params_num)
-        param = torch.squeeze(param)[target_num]
+        param = torch.squeeze(param)
         model = partial_reverse_tomodel(param, net, train_layer).to(param.device)
 
         model.eval()
