@@ -165,13 +165,16 @@ class DDPM(BaseSystem):
             accs.append(acc)
 
         lists = {dataset: [] for dataset in self.dataset_list}
-        for param, label in zip(params, labels):
+        hidden_size = {dataset: [] for dataset in self.dataset_list}
+        for idx, (param, label) in enumerate(zip(params, labels)):
             label = int(label)
             lists[self.dataset_list[label]].append(param.view(1, -1))
+            hidden_size[self.dataset_list[label]].append(dims[idx][0])
         for dataset, parameters in lists.items():
             path = f'./param_data/{dataset}/generate_all.pt'
             parameters = torch.cat(parameters, dim=0)
             torch.save(parameters, path)
+            torch.save(parameters, f'./param_data/{dataset}/hidden_all.pt')
             print(f'Save in {path}')
 
         best_acc = np.max(accs)
