@@ -357,5 +357,5 @@ class PerceiverAutoEncoder(nn.Module):
         # inputs = inputs.view(inputs.shape[0], -1)
         out = out.view(out.shape[0], -1)
         inputs = inputs.view(out.shape[0], -1)
-        loss = F.mse_loss(out, inputs)
+        loss = F.mse_loss(out[mask], inputs[mask])
         return loss
