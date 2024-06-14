@@ -83,7 +83,7 @@ class PData(DataBase):
     def get_graph_enc(self, dataset_list):
         encoding = {}
         for idx, dataset in enumerate(dataset_list):
-            path = f'./param_data/{dataset}/contrastive_encoding.pt'
+            path = f'./param_data/{dataset}/deep_encoding.pt'
             print(f'load graph encoding from {path}')
             enc = torch.load(path, map_location='cpu')
             encoding[idx] = enc
