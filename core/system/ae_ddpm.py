@@ -28,8 +28,8 @@ class AE_DDPM(DDPM):
         # config.system.model.arch.model.in_dim = latent_dim[-1] * latent_dim[-2]
         super(AE_DDPM, self).__init__(config)
         # self.pos = self.task.get_pos().unsqueeze(0).float().cuda()
-        self.ae_model = torch.load('./param_data/AE_all.pt', map_location='cpu')
-        # self.ae_model = ae_model
+        # self.ae_model = torch.load('./param_data/AE_all.pt', map_location='cpu')
+        self.ae_model = ae_model
         self.save_hyperparameters()
         self.split_epoch = self.train_cfg.split_epoch
         self.dataset_list = self.train_cfg.datasets
