@@ -17,8 +17,8 @@ ae_model:
     depth: 4
     dim_head: 64
     num_encoder_latents: 8
-    num_decoder_latents: 1890
-    max_seq_len: 2000
+    num_decoder_latents: 287
+    max_seq_len: 500
     ff_mult: 4
     encoder_only: False
     transformer_decoder: False
