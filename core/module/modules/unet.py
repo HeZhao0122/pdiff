@@ -507,6 +507,11 @@ class AE_CNN_bottleneck(nn.Module):
         self.cond_emb = nn.Linear(cond_dim, dim_ae)
         self.org_dim = in_channel
         # in_channel = in_channel * (2 if self_cond else 1)
+        self.shape_emb = nn.Sequential(nn.Linear(3, 1024),
+                                       nn.Sigmoid(),
+                                       nn.Linear(1024, self.in_dim),
+                                       nn.Sigmoid())
+        # self.out_decode = nn.Linear(self.len_token * 2, self.len_tok
 
         self.enc1 = nn.Sequential(
             nn.InstanceNorm1d(self.real_input_dim),
@@ -603,7 +608,8 @@ class AE_CNN_bottleneck(nn.Module):
         if len(input.size()) == 2:
             input = input.view(input.size(0), 1, -1)
 
-        input = input
+        shape_cond = self.shape_emb(cond[1]).reshape(input.shape[0], 1, -1)
+        input = input + shape_cond
         # input = torch.cat(
         #     [
         #         input,
@@ -1335,7 +1341,7 @@ class AE_small(nn.Module):
         # for name, param in self.latent_enc.named_parameters():
         #     param.requires_grad = False
 
-        self.out = nn.Linear(self.real_input_dim, self.in_dim)
+        # self.out = nn.Linear(self.real_input_dim, self.in_dim)
 
     def forward(self, input, time, cond=None):
         # if self.dec is not None:
@@ -1513,31 +1519,29 @@ class TF(nn.Module):
             # linear(in_dim, in_dim),
         )
         self.cond_emb = nn.Sequential(nn.Linear(cond_dim, self.len_token), nn.Tanh())
-        self.shape_emb = nn.Sequential(nn.Linear(3, self.len_token), nn.Tanh())
+        self.shape_emb = nn.Sequential(nn.Linear(3, ff_dim),
+                                       nn.Sigmoid(),
+                                       nn.Linear(ff_dim, self.len_token),
+                                       nn.Sigmoid())
         # self.out_decode = nn.Linear(self.len_token * 2, self.len_token)
 
     def forward(self, input, time, cond=None):
         # import pdb; pdb.set_trace()
         # time_embed = self.time(time) # + self.label_emb(cond)
         input_view_shape = input.shape
-        cond_emb = self.cond_emb(cond[0])
+        # cond_emb = self.cond_emb(cond[0])
         # cond_emb = repeat(self.cond_emb(cond),'b d -> b n d', n=input.shape[1])
-        cond_emb = cond_emb.reshape(input_view_shape[0], -1, self.len_token)
-        # shape_cond = shape_cond.reshape(input_view_shape[0], -1, self.len_token)
+        # cond_emb = cond_emb.reshape(input_view_shape[0], -1, self.len_token)
         # input = input + cond_emb
         # input =torch.cat((input, cond_emb), dim=-1)
-        # if self.self_cond:
-        #     x_self_cond = default(cond, lambda: torch.zeros_like(input))
-        #     input = input - x_self_cond
         input_seq = input.reshape(input_view_shape[0], -1, self.len_token)
-        shape_cond = cond[1].reshape(input_view_shape[0], -1, self.len_token)
+        shape_cond = self.shape_emb(cond[1]).reshape(input_view_shape[0], -1, self.len_token)
 
         # import pdb; pdb.set_trace()
         time_emb = self.time_encode(time)
         time_emb_rs = time_emb.reshape(input_view_shape[0], 1, self.len_token)
         emb_enc1 = self.enc(input_seq + time_emb_rs + shape_cond)
-        # print('time_emb.shape', time_emb.shape)
-        # print('emb_enc1.shape', emb_enc1.shape)
+        emb_enc1 = emb_enc1 + shape_cond
         out_dec1 = self.dec(emb_enc1, emb_enc1)
         # out_dec1 = out_dec1.reshape(input_shape[0], -1)
         # out = self.out_decode(out_dec1)
