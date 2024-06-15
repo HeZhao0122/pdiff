@@ -487,10 +487,7 @@ class AE_CNN_bottleneck(nn.Module):
             self,
             in_dim,
             in_channel,
-            cond_dim,
-            dim_ae,
             time_step=1000,
-            dec=None,
             self_cond=False
     ):
         super().__init__()
@@ -501,10 +498,10 @@ class AE_CNN_bottleneck(nn.Module):
         self.in_dim = in_dim
         self.fold_rate = 1
         self.kernal_size = 3
-        self.dec = dec
+        # self.dec = dec
         self.real_input_dim = in_dim
         self.self_cond = self_cond
-        self.cond_emb = nn.Linear(cond_dim, dim_ae)
+        # self.cond_emb = nn.Linear(cond_dim, dim_ae)
         self.org_dim = in_channel
         # in_channel = in_channel * (2 if self_cond else 1)
         self.shape_emb = nn.Sequential(nn.Linear(3, 1024),
