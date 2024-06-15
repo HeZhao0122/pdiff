@@ -56,7 +56,7 @@ model:
       in_channel: 1
       in_dim: 512
       cond_dim: 512
-      latent_dim: 32
+#      latent_dim: 32
 #      _target_: core.module.modules.unet.TF
 #      in_dim: 12
 #      cond_dim: 512
