@@ -339,14 +339,14 @@ class PerceiverAutoEncoder(nn.Module):
 
     def forward(self, encoder_input, attention_mask=None):
         inputs, mask = encoder_input
-        # shape_info = mask.float().reshape(inputs.shape)
+        shape_info = mask.float().reshape(inputs.shape)
         # batch_size = inputs.shape[0]
         encoder_latents = self.perceiver_encoder(
             inputs, mask=attention_mask)
-        # shape_latents = self.perceiver_encoder(shape_info, mask=attention_mask)
+        shape_latents = self.perceiver_encoder(shape_info, mask=attention_mask)
         # encoder_latents = encoder_latents.view(batch_size, -1)
 
-        out = self.perceiver_decoder(encoder_latents)
+        out = self.perceiver_decoder(encoder_latents + shape_latents)
 
         # recons = out
         # recons_loss = F.mse_loss(recons, inputs)

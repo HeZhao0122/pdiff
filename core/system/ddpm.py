@@ -114,10 +114,10 @@ class DDPM(BaseSystem):
         dims = pbatch[4][:10]
         print(f"Input label: {labels[:10]}")
         batch = self.pre_process(batch)
-        # shape_latent = self.pre_process(mask)[:10]
+        shape_latent = self.pre_process(mask)[:10]
         outputs = self.generate(batch, (cond,dims), 10)
 
-        params = self.post_process(outputs)
+        params = self.post_process(outputs + shape_latent)
         params = params.cpu()
 
         accs = []
@@ -155,9 +155,9 @@ class DDPM(BaseSystem):
         dims = pbatch[4]
 
         batch = self.pre_process(batch)
-        # shape_latent = self.pre_process(mask)
+        shape_latent = self.pre_process(mask)
         outputs = self.generate(batch, (cond, dims), batch.shape[0])
-        params = self.post_process(outputs)
+        params = self.post_process(outputs + shape_latent)
         accs = []
         for i in range(params.shape[0]):
             param = params[i].view(-1)
@@ -171,13 +171,14 @@ class DDPM(BaseSystem):
             lists[self.dataset_list[label]].append(param.view(1, -1))
             hidden_size[self.dataset_list[label]].append(dims[idx][0])
         for dataset, parameters in lists.items():
-            path = f'./param_data/{dataset}/generate_all.pt'
+            path = f'./param_data/{dataset}/generate.pt'
             parameters = torch.cat(parameters, dim=0)
             torch.save(parameters, path)
-            torch.save(parameters, f'./param_data/{dataset}/hidden_all.pt')
+            torch.save(parameters, f'./param_data/{dataset}/hidden.pt')
             print(f'Save in {path}')
 
         best_acc = np.max(accs)
+        print(f"Hidden dims: {dims}")
         print("generated models accuracy:", accs)
         print("generated models mean accuracy:", np.mean(accs))
         print("generated models best accuracy:", best_acc)
