@@ -195,9 +195,9 @@ class DiT(nn.Module):
         self.initialize_weights()
         self.cond_embedder = nn.Sequential(nn.Linear(cond_dim, hidden_size), nn.Tanh())
         self.shape_embedder = nn.Sequential(nn.Linear(3, hidden_size),
-                                            nn.Sigmoid(),
+                                            nn.Tanh(),
                                             nn.Linear(hidden_size, hidden_size),
-                                            nn.Sigmoid(),)
+                                            nn.Tanh(),)
 
     def initialize_weights(self):
         # Initialize transformer layers:

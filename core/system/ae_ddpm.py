@@ -125,15 +125,19 @@ class AE_DDPM(DDPM):
             ae_rec_accs = []
             # latent, ae_params = self.ae_model.reconstruct(good_param)
             latent = self.ae_model.encode(good_param)
-            shape_latent = self.ae_model.encode(good_mask.float().reshape(good_param.shape))
+            # shape_latent = self.ae_model.encode(good_mask.float().reshape(good_param.shape))
+            # latent = shape_latent + latent
             if self.current_epoch == self.split_epoch-1:
                 all_l = self.ae_model.encode(batch)
+                # all_shape = self.ae_model.encode(mask.float().reshape(batch.shape))
+                # all_l = all_l + all_shape
                 torch.save(self.ae_model, './param_data/AE.pt')
-                torch.save(all_l, './param_data/latent.pt')
+                torch.save(all_l, './param_data/latent_no_shape.pt')
                 torch.save(labels, './param_data/labels.pt')
+                torch.save(dims, './param_data/dims_no_shape.pt')
                 print(f'Save Latent!')
             print("latent shape:{}".format(latent.shape))
-            ae_params = self.ae_model.decode(latent + shape_latent)
+            ae_params = self.ae_model.decode(latent)
             print("ae params shape:{}".format(ae_params.shape))
             ae_params = ae_params.cpu()
             for i, param in enumerate(ae_params):

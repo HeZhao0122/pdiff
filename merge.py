@@ -123,9 +123,9 @@ def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
 
 
 lrs = [0.1, 0.05]
-momentum = [0.9, 0.95]
-seeds = [0, 1, 2]
-hidden_dims = [32, 50, 64]
+momentum = [0.95]
+seeds = [0,1,2,3,4,5]
+hidden_dims = [20,30,40,50,64]
 dataset_list = ['PubMed']
 merge_all(dataset_list, lrs, momentum, seeds, hidden_dims)
 # merge_dataset(dataset, seed_num)

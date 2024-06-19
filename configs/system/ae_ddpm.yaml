@@ -57,22 +57,22 @@ model:
 #      in_dim: 512
 #      cond_dim: 512
 #      latent_dim: 32
-#      _target_: core.module.modules.unet.TF
-#      in_dim: 12
-#      cond_dim: 512
-#      latent_dim: 64
-#      ff_dim: 512
-#      num_layers: 3
-#      self_cond: False
-        _target_: core.module.modules.DiT.DiT
-        input_size: 512
-        patch_size: 8
-        in_channels: 1
-        hidden_size: 768
-        depth: 12
-        num_heads: 12
-        mlp_ratio: 4.0
-        learn_sigma: False
+      _target_: core.module.modules.unet.TF
+      in_dim: 512
+      cond_dim: 512
+      latent_dim: 64
+      ff_dim: 512
+      num_layers: 3
+      self_cond: False
+#        _target_: core.module.modules.DiT.DiT
+#        input_size: 512
+#        patch_size: 8
+#        in_channels: 1
+#        hidden_size: 768
+#        depth: 12
+#        num_heads: 12
+#        mlp_ratio: 4.0
+#        learn_sigma: False
 
 #     model:
 #       _target_: core.module.modules.od_unet.AE_CNN_bottleneck
@@ -90,7 +90,7 @@ model_var_type: fixedlarge
 loss_type: mse
 
 train:
-  split_epoch: 800
+  split_epoch: 1000
   datasets: ['PubMed']
   fine_tune_epoch: 2400
   generate_epoch: 200
@@ -111,7 +111,7 @@ train:
     _convert_: all
     max_epochs: 20000
     check_val_every_n_epoch:
-    val_check_interval : 900
+    val_check_interval : 3000
     log_every_n_steps: 8
     limit_val_batches: 1
     limit_test_batches: 1

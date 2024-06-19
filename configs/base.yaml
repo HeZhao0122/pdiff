@@ -12,7 +12,7 @@ load_system_checkpoint:
 mode: train
 
 seed: 45
-iter_seed: 3
+iter_seed: 10
 process_title: p-diff
 
 output_dir: outputs/PubMed

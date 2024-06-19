@@ -343,10 +343,10 @@ class PerceiverAutoEncoder(nn.Module):
         # batch_size = inputs.shape[0]
         encoder_latents = self.perceiver_encoder(
             inputs, mask=attention_mask)
-        shape_latents = self.perceiver_encoder(shape_info, mask=attention_mask)
+        # shape_latents = self.perceiver_encoder(shape_info, mask=attention_mask)
         # encoder_latents = encoder_latents.view(batch_size, -1)
 
-        out = self.perceiver_decoder(encoder_latents + shape_latents)
+        out = self.perceiver_decoder(encoder_latents)
 
         # recons = out
         # recons_loss = F.mse_loss(recons, inputs)
@@ -357,5 +357,5 @@ class PerceiverAutoEncoder(nn.Module):
         # inputs = inputs.view(inputs.shape[0], -1)
         out = out.view(out.shape[0], -1)
         inputs = inputs.view(out.shape[0], -1)
-        loss = F.mse_loss(out[mask], inputs[mask])
+        loss = F.mse_loss(out, inputs)
         return loss
