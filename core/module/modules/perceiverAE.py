@@ -323,30 +323,43 @@ class PerceiverAutoEncoder(nn.Module):
             self.perceiver_decoder = PerceiverResampler(dim=dim_ae, dim_latent=dim_lm, depth=depth, dim_head=dim_head,
                                                         num_latents=num_decoder_latents,
                                                         max_seq_len=num_encoder_latents, ff_mult=ff_mult)
+        # self.logvar = nn.Parameter(torch.ones(size=()) * 0.0)
+        # self.quant_lin = nn.Linear(num_encoder_latents * dim_ae, 4 * dim_ae)
+        # self.post_quant_lin = nn.Linear(2* dim_ae, num_encoder_latents * dim_ae)
+        # self.loss = Myloss(kl_weight=0.000001)
+        # self.num_encoder_latent = num_encoder_latents
+        # self.dim_ae = dim_ae
 
-    def reparameterize(self, mu, logvar):
-        std = torch.exp(0.5*logvar)
-        eps = torch.randn_like(std)
-        return mu + eps*std
+    def reparameterize(self, parameters):
+        parameters = DiagonalGaussianDistribution(parameters)
+        z = parameters.sample()
+        return z
 
     def decode(self, ae_latent):
+        # ae_latent = self.post_quant_lin(ae_latent)
+        # ae_latent = ae_latent.reshape(-1, self.num_encoder_latent, self.dim_ae)
         out = self.perceiver_decoder(ae_latent)
         return out
 
     def encode(self, encoder_outputs, attention_mask=None):
-        # encoder_outputs = self.norm1(encoder_outputs)
-        return self.perceiver_encoder(encoder_outputs, mask=attention_mask)
+        h = self.perceiver_encoder(encoder_outputs, mask=attention_mask)
+        # posterior = self.quant_lin(h.view(h.shape[0], -1))
+        # posterior = DiagonalGaussianDistribution(posterior)
+        posterior = h
+        return posterior
 
     def forward(self, encoder_input, attention_mask=None):
         inputs, mask = encoder_input
-        shape_info = mask.float().reshape(inputs.shape)
+        # shape_info = mask.float().reshape(inputs.shape)
         # batch_size = inputs.shape[0]
-        encoder_latents = self.perceiver_encoder(
-            inputs, mask=attention_mask)
+        posterior = self.encode(inputs, attention_mask=attention_mask)
         # shape_latents = self.perceiver_encoder(shape_info, mask=attention_mask)
         # encoder_latents = encoder_latents.view(batch_size, -1)
 
-        out = self.perceiver_decoder(encoder_latents)
+        # z = posterior.sample()
+        z = posterior
+
+        out = self.decode(z)
 
         # recons = out
         # recons_loss = F.mse_loss(recons, inputs)
@@ -357,5 +370,76 @@ class PerceiverAutoEncoder(nn.Module):
         # inputs = inputs.view(inputs.shape[0], -1)
         out = out.view(out.shape[0], -1)
         inputs = inputs.view(out.shape[0], -1)
-        loss = F.mse_loss(out, inputs)
-        return loss
+        mse_loss = F.mse_loss(out, inputs)
+        # loss, _ = self.loss(inputs, out, posterior)
+
+        # loss = loss/torch.exp(self.logvar) + self.logvar
+        return mse_loss
+
+class Myloss(nn.Module):
+    def __init__(self, logvar_init=0.0, kl_weight=1.0):
+
+        super().__init__()
+        self.kl_weight = kl_weight
+        self.logvar = nn.Parameter(torch.ones(size=()) * logvar_init)
+
+    def forward(self, inputs, reconstructions, posteriors, split="train",weights=None):
+
+        rec_loss = torch.abs(inputs.contiguous() - reconstructions.contiguous())
+        # rec_loss = (inputs.contiguous() - reconstructions.contiguous())**2
+
+        nll_loss = rec_loss / torch.exp(self.logvar) + self.logvar
+        weighted_nll_loss = nll_loss
+        if weights is not None:
+            weighted_nll_loss = weights*nll_loss
+        weighted_nll_loss = torch.sum(weighted_nll_loss) / (weighted_nll_loss.shape[0]*weighted_nll_loss.shape[1])
+        nll_loss = torch.sum(nll_loss) / nll_loss.shape[0]
+        kl_loss = posteriors.kl()
+        kl_loss = torch.sum(kl_loss) / kl_loss.shape[0]
+        loss = weighted_nll_loss + self.kl_weight * kl_loss
+
+        log = {"{}/total_loss".format(split): loss.clone().detach().mean(), "{}/logvar".format(split): self.logvar.detach(),
+               "{}/kl_loss".format(split): kl_loss.detach().mean(), "{}/nll_loss".format(split): nll_loss.detach().mean(),
+               "{}/rec_loss".format(split): rec_loss.detach().mean(),
+               }
+        return loss, log
+
+class DiagonalGaussianDistribution(object):
+    def __init__(self, parameters, deterministic=False):
+        self.parameters = parameters
+        self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)
+        self.logvar = torch.clamp(self.logvar, -30.0, 20.0)
+        self.deterministic = deterministic
+        self.std = torch.exp(0.5 * self.logvar)
+        self.var = torch.exp(self.logvar)
+        if self.deterministic:
+            self.var = self.std = torch.zeros_like(self.mean).to(device=self.parameters.device)
+
+    def sample(self):
+        x = self.mean + self.std * torch.randn(self.mean.shape).to(device=self.parameters.device)
+        return x
+
+    def kl(self, other=None):
+        if self.deterministic:
+            return torch.Tensor([0.])
+        else:
+            if other is None:
+                return 0.5 * torch.sum(torch.pow(self.mean, 1)
+                                       + self.var - 1.0 - self.logvar,
+                                       dim=[1])
+            else:
+                return 0.5 * torch.sum(
+                    torch.pow(self.mean - other.mean, 1) / other.var
+                    + self.var / other.var - 1.0 - self.logvar + other.logvar,
+                    dim=[1])
+
+    def nll(self, sample, dims=[1]):
+        if self.deterministic:
+            return torch.Tensor([0.])
+        logtwopi = np.log(2.0 * np.pi)
+        return 0.5 * torch.sum(
+            logtwopi + self.logvar + torch.pow(sample - self.mean, 2) / self.var,
+            dim=dims)
+
+    def mode(self):
+        return self.mean

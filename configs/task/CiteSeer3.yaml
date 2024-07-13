@@ -1,8 +1,8 @@
 name: nodecft
 
 data:
-  data_root: data/CiteSeer
-  dataset: CiteSeer
+  data_root: data/CiteSeer3
+  dataset: CiteSeer3
   seed: 44
 
 # model for data
@@ -10,7 +10,7 @@ model:
   _target_: models.nodecft.BaseGraph
   in_feat: 3703
   hidden_dim: 32
-  num_class: 6
+  num_class: 2
   aggr: 'gat'
   layers: 3
 

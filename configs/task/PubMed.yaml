@@ -9,7 +9,7 @@ data:
 model:
   _target_: models.nodecft.BaseGraph
   in_feat: 500
-  hidden_dim: 50
+  hidden_dim: 32
   num_class: 3
   aggr: 'gat'
   layers: 3
@@ -51,5 +51,5 @@ param:
   dim_ae: 64
   train_list: ['PubMed']
   test_list: ['PubMed']
-  test_shape: [36681, 241874, 96661]
+  test_shape: [10589, 16179, 21969, 27959, 36681, 8409, 17321]
   test_dim: [20,30,40,50,64, 16, 32]

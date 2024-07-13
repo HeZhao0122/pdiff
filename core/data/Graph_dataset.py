@@ -74,7 +74,13 @@ class NodeCFTData(DataBase):
             'PubMed': datasets.Planetoid(root=f'./data/PubMed', name='PubMed'),
             'DBLP': datasets.CitationFull(root=f'./data/DBLP', name='DBLP'),
             'CiteSeer': datasets.Planetoid(root=f'./data/CiteSeer', name='CiteSeer'),
-            'Cora': datasets.Planetoid(root=f'./data/Cora', name='Cora')
+            'Cora': datasets.Planetoid(root=f'./data/Cora', name='Cora'),
+            'CiteSeer1': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/CiteSeer1.pt'), None],
+            'CiteSeer2': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/CiteSeer2.pt'), None],
+            'CiteSeer3': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/CiteSeer3.pt'), None],
+            'Cora1': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/Cora1.pt'), None],
+            'Cora2': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/Cora2.pt'), None],
+            'Cora3': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/Cora3.pt'), None]
         }
         data = data_cls[self.dataset][0]
         try:

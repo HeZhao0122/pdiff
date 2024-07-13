@@ -20,16 +20,16 @@ class BaseTask():
     def get_task_data(self):
         return self.task_data
 
-    def get_param_data(self):
-        return self.param_data
+    # def get_param_data(self):
+    #     return self.param_data
+    #
+    # @property
+    # def param_data(self):
+    #     return self.set_param_data()
 
-    @property
-    def param_data(self):
-        return self.set_param_data()
-
-    @abc.abstractmethod
-    def set_param_data(self):
-        raise NotImplementedError
+    # @abc.abstractmethod
+    # def set_param_data(self):
+    #     raise NotImplementedError
 
     @abc.abstractmethod
     def test_g_model(self, **kwargs):

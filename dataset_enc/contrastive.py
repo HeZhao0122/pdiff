@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import os
 import numpy as np
 import random
+from graph_encoding import get_graph_encoding
 
 
 class CL(nn.Module):
@@ -24,22 +26,44 @@ class CL(nn.Module):
         )
         self.criterion = nn.BCEWithLogitsLoss()
         self.device = device
+        self.temp = nn.Parameter(torch.rand(1))
 
+    # def forward(self, pos, neg):
+    #     pos_latent, pos_target = pos
+    #     neg_latent, neg_target = neg
+    #     # pos_latent = self.param_encoder(pos_latent)
+    #     # neg_latent = self.param_encoder(neg_latent)
+    #     pos_target = F.normalize(self.encoder(pos_target), p=2, dim=1)
+    #     neg_target = F.normalize(self.encoder(neg_target), p=2, dim=1)
+    #     shape = pos_latent.shape
+    #
+    #     pos_score = pos_latent * pos_target * torch.exp(self.temp)
+    #     neg_score = neg_latent * neg_target * torch.exp(self.temp)
+    #
+    #     loss = self.criterion(pos_score, torch.ones(shape).to(self.device))
+    #     # loss = (loss + self.criterion(neg_score, torch.zeros(shape).to(self.device)))/2
+    #     return loss
     def forward(self, pos, neg):
         pos_latent, pos_target = pos
-        neg_latent, neg_target = neg
+        # neg_latent, neg_target = neg
         # pos_latent = self.param_encoder(pos_latent)
         # neg_latent = self.param_encoder(neg_latent)
+        # pos_target = F.normalize(self.encoder(pos_target), p=2, dim=1)
+        # neg_target = F.normalize(self.encoder(neg_target), p=2, dim=1)
         pos_target = self.encoder(pos_target)
-        neg_target = self.encoder(neg_target)
-        shape = pos_latent.shape
+        pos_target = F.normalize(pos_target, p=2, dim=1)
+        pos_latent = F.normalize(pos_latent, p=2, dim=1)
+        logits = (pos_latent @ pos_target.T)/self.temp
+        dataset_similarity = pos_target @ pos_target.T
+        weight_similarity = pos_latent @ pos_latent.T
 
-        pos_score = pos_latent * pos_target
-        neg_score = neg_latent * neg_target
+        targets = F.softmax(
+            (dataset_similarity + weight_similarity) / 2 * self.temp, dim=-1)
+        weight_loss = cross_entropy(logits, targets, reduction='none')
+        dataset_loss = cross_entropy(logits.T, targets.T, reduction='none')
+        loss = (dataset_loss + weight_loss) / 2.0
 
-        loss = self.criterion(pos_score, torch.ones(shape).to(self.device))
-        loss = loss + self.criterion(neg_score, torch.zeros(shape).to(self.device))
-        return loss
+        return loss.mean()
 
     def get_encoding(self, encoding):
         return self.encoder(encoding)
@@ -56,11 +80,20 @@ class ContrastivePair(Dataset):
     def __len__(self):
         return self.pos[0].shape[0]
 
+def cross_entropy(preds, targets, reduction='none'):
+    log_softmax = nn.LogSoftmax(dim=-1)
+    loss = (-targets * log_softmax(preds)).sum(1)
+    if reduction == "none":
+        return loss
+    elif reduction == "mean":
+        return loss.mean()
+
+
 
 def load_latent(root, device='cpu'):
-    latents = torch.load(os.path.join(root, 'latent_all.pt'), map_location=device)
+    latents = torch.load(os.path.join(root, 'latent_no_shape.pt'), map_location=device)
     latents = latents.view(latents.shape[0], -1)
-    labels = torch.load(os.path.join(root, 'labels_all.pt'), map_location=device)
+    labels = torch.load(os.path.join(root, 'labels.pt'), map_location=device)
     dataset_num = int(torch.max(labels)) + 1
     res = [[] for _ in range(dataset_num)]
     for idx, l in enumerate(labels):
@@ -129,12 +162,12 @@ def train(dataloder, epochs, lr, in_dim, latent_dim, device):
 def main():
     device = 'cuda'
     latents = load_latent('./param_data/')
-    encodings, in_size = get_graph_enc(['PubMed', 'CiteSeer'])
-    pos_pair, neg_pair = get_pos_neg_pair(encodings, latents, num=75)
+    encodings, in_size = get_graph_enc(['CiteSeer1', 'CiteSeer2'])
+    pos_pair, neg_pair = get_pos_neg_pair(encodings, latents, num=50)
     train_data = ContrastivePair(pos_pair, neg_pair)
     train_loader = DataLoader(train_data, batch_size=50, num_workers=1, shuffle=True, persistent_workers=True)
-    model = train(train_loader, epochs=100, lr=0.01, in_dim=in_size, latent_dim=512, device=device)
-    target_graph_enc = ['PubMed', 'CiteSeer', 'Cora']
+    model = train(train_loader, epochs=300, lr=1e-2, in_dim=in_size, latent_dim=512, device=device)
+    target_graph_enc = ['CiteSeer1', 'CiteSeer2', 'CiteSeer3']
     graph_encodings, _ = get_graph_enc(target_graph_enc, device)
     for idx, dataset in enumerate(target_graph_enc):
         enc = graph_encodings[idx]

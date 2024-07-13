@@ -169,16 +169,13 @@ class TimeEmbedding(nn.Module):
 
         self.dim = dim
         # half_dim      = self.dim // 2
-        half_dim = self.dim
+        half_dim = self.dim // 2
         self.inv_freq = torch.exp(
             torch.arange(half_dim, dtype=torch.float32)
             * (-math.log(10000) / (half_dim - 1))
         )
 
     def forward(self, input):
-        import pdb
-
-        pdb.set_trace()
         shape = input.shape
         input = input.view(-1).to(torch.float32)
         sinusoid_in = torch.ger(input, self.inv_freq.to(input.device))
@@ -249,7 +246,7 @@ class UNet(nn.Module):
             attn_strides,
             dropout=0,
             fold=1,
-            num_classes=10,  # for cifar10
+            cond_dim=1024
     ):
         super().__init__()
 
@@ -339,11 +336,13 @@ class UNet(nn.Module):
             nn.GroupNorm(32, in_channel),
             Swish(),
             # conv2d(in_channel, 16, 3, padding=1, scale=1e-10),
-            conv2d(in_channel, 3, 3, padding=1, scale=1e-10),
+            conv2d(in_channel, 1, 3, padding=1, scale=1e-10),
         )
+        self.cond_proj = nn.Sequential(nn.Linear(cond_dim, time_dim),
+                                       nn.SiLU())
 
-        if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_dim)
+        # if num_classes is not None:
+        #     self.label_emb = nn.Embedding(num_classes, time_dim)
         #     self.label_emb = nn.Sequential(
         #     # nn.Linear(num_classes, 256),
         #     nn.ReLU(),
@@ -352,7 +351,13 @@ class UNet(nn.Module):
 
     def forward(self, input, time, cond=None):
         # import pdb; pdb.set_trace()
-        time_embed = self.time(time) + self.label_emb(cond)
+        input_shape = input.shape
+        # input = input - cond[2]
+        input = F.normalize(input.reshape(input_shape[0], -1),p=2, dim=1).reshape(input_shape)
+        c = F.normalize(cond[0], p=2, dim=1)
+        input = input + c.reshape(input.shape)
+        input = input.unsqueeze(1)
+        time_embed = self.time(time)
 
         feats = []
 
@@ -376,7 +381,7 @@ class UNet(nn.Module):
             else:
                 out = layer(out)
 
-        out = self.out(out)
+        out = self.out(out).reshape(input_shape)
         # out = spatial_unfold(out, self.fold)
 
         return out

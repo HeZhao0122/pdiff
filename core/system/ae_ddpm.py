@@ -16,6 +16,7 @@ from core.module.prelayer.latent_transformer import Param2Latent
 from .ddpm import DDPM
 
 
+
 class AE_DDPM(DDPM):
     def __init__(self, config, **kwargs):
         super(AE_DDPM, self).__init__(config)
@@ -28,11 +29,10 @@ class AE_DDPM(DDPM):
         # config.system.model.arch.model.in_dim = latent_dim[-1] * latent_dim[-2]
         super(AE_DDPM, self).__init__(config)
         # self.pos = self.task.get_pos().unsqueeze(0).float().cuda()
-        # self.ae_model = torch.load('./param_data/AE_all.pt', map_location='cpu')
+        # self.ae_model = torch.load('./param_data/AE_cite_cora.pt', map_location='cpu')
         self.ae_model = ae_model
         self.save_hyperparameters()
         self.split_epoch = self.train_cfg.split_epoch
-        self.dataset_list = self.train_cfg.datasets
         self.save_epoch = self.train_cfg.generate_epoch
         self.fine_tune_epoch = self.train_cfg.fine_tune_epoch
         self.loss_func = nn.MSELoss()
@@ -65,14 +65,14 @@ class AE_DDPM(DDPM):
 
     def training_step(self, batch, batch_idx, **kwargs):
         ddpm_optimizer, ae_optimizer = self.configure_optimizers()
-        param, mask, enc, label, shapes = batch
+        param, mask, enc, label, shapes, ini = batch
         if self.current_epoch < self.split_epoch:
             loss = self.ae_forward((param, mask), **kwargs)
             ae_optimizer.zero_grad()
             self.manual_backward(loss)
             ae_optimizer.step()
         else:
-            loss = self.forward((param, enc, shapes), **kwargs)
+            loss = self.forward((param, enc, shapes, ini), **kwargs)
             ddpm_optimizer.zero_grad()
             self.manual_backward(loss)
             ddpm_optimizer.step()
@@ -89,8 +89,10 @@ class AE_DDPM(DDPM):
 
     def pre_process(self, batch):
         latent = self.ae_model.encode(batch)
-        self.latent_shape = latent.shape[-2:]
-        return latent
+        z = latent
+        # z = latent.sample()
+        self.latent_shape = z.shape[-2:]
+        return z
 
     def post_process(self, outputs):
         # pdb.set_trace()
@@ -106,12 +108,12 @@ class AE_DDPM(DDPM):
         if self.current_epoch < self.split_epoch:
             # todo
             good_param = batch[:10]
-            good_mask = mask[:10]
+            good_label = labels[:10]
             good_dim = dims[:10]
             input_accs = []
             for i, param in enumerate(good_param):
                 param = param.view(-1)[:self.in_dim]
-                acc, test_loss, output_list = self.task_val_func(param, good_dim[i])
+                acc, test_loss, output_list = self.task_val_func(param, good_dim[i], int(good_label[i]))
                 input_accs.append(acc)
 
             print("input model accuracy:{}".format(input_accs))
@@ -124,26 +126,26 @@ class AE_DDPM(DDPM):
             print(f'Hidden dim: {good_dim}')
             ae_rec_accs = []
             # latent, ae_params = self.ae_model.reconstruct(good_param)
-            latent = self.ae_model.encode(good_param)
+            latent = self.pre_process(good_param)
             # shape_latent = self.ae_model.encode(good_mask.float().reshape(good_param.shape))
             # latent = shape_latent + latent
             if self.current_epoch == self.split_epoch-1:
-                all_l = self.ae_model.encode(batch)
+                all_l = self.pre_process(batch)
                 # all_shape = self.ae_model.encode(mask.float().reshape(batch.shape))
                 # all_l = all_l + all_shape
-                torch.save(self.ae_model, './param_data/AE.pt')
-                torch.save(all_l, './param_data/latent_no_shape.pt')
-                torch.save(labels, './param_data/labels.pt')
-                torch.save(dims, './param_data/dims_no_shape.pt')
+                torch.save(self.ae_model, './param_data/AE_cite_cora_vae.pt')
+                torch.save(all_l, './param_data/latent_cite_cora_vae.pt')
+                torch.save(labels, './param_data/labels_cite_cora_vae.pt')
+                torch.save(dims, './param_data/dims_cite_cora_vae.pt')
                 print(f'Save Latent!')
             print("latent shape:{}".format(latent.shape))
-            ae_params = self.ae_model.decode(latent)
+            ae_params = self.post_process(latent)
             print("ae params shape:{}".format(ae_params.shape))
             ae_params = ae_params.cpu()
             for i, param in enumerate(ae_params):
                 param = param.to(batch.device)
                 param = param.view(-1)[:self.in_dim]
-                acc, test_loss, output_list = self.task_val_func(param, good_dim[i])
+                acc, test_loss, output_list = self.task_val_func(param, good_dim[i], int(good_label[i]))
                 ae_rec_accs.append(acc)
 
             # lists = {dataset: [] for dataset in self.dataset_list}
@@ -199,62 +201,4 @@ class AE_DDPM(DDPM):
 
         return self.ddpm_optimizer, self.ae_optimizer
 
-
-class P_DDPM(DDPM):
-    def __init__(self, config, **kwargs):
-
-        super(P_DDPM, self).__init__(config)
-        self.save_hyperparameters()
-        self.split_epoch = self.train_cfg.split_epoch
-        total_param = sum(p.numel() for p in self.parameters() if p.requires_grad)
-        config.system.model.arch.model.in_dim = config.system.ae_model.in_dim
-        print(f'Total param: {total_param}')
-
-    def ae_forward(self, batch, **kwargs):
-        output = self.ae_model(batch)
-        # loss = output
-        loss = self.loss_func(batch, output, **kwargs)
-        # reg_loss = self.reg_func(F.softmax(output), F.softmax(batch))
-        # self.log('epoch', self.current_epoch)
-        self.log('ae_loss', loss.cpu().detach().mean().item(), on_epoch=True, prog_bar=True, logger=True)
-        # self.log('kl_loss_*1e+3', reg_loss.cpu().detach().mean().item(), on_epoch=True, prog_bar=True, logger=True)
-        return loss
-        # return loss
-
-    def training_step(self, batch, batch_idx, **kwargs):
-        ddpm_optimizer = self.optimizers()
-        batch = batch.unsqueeze(1)
-        loss = self.forward(batch, **kwargs)
-        ddpm_optimizer.zero_grad()
-        self.manual_backward(loss)
-        ddpm_optimizer.step()
-
-        if hasattr(self, 'lr_scheduler'):
-            self.lr_scheduler.step()
-        return {'loss': loss}
-
-    def pre_process(self, batch):
-
-        return batch
-
-    def post_process(self, outputs):
-        # pdb.set_trace()
-        return outputs
-
-    def validation_step(self, batch, batch_idx, **kwargs: Any):
-        batch = batch.unsqueeze(1)
-        dict = super(P_DDPM, self).validation_step(batch, batch_idx, **kwargs)
-        self.log('ae_acc', 94.3)
-        self.log('ae_loss', 0 )
-        return dict
-
-    def configure_optimizers(self, **kwargs):
-        ddpm_params = self.model.parameters()
-
-        self.ddpm_optimizer = hydra.utils.instantiate(self.train_cfg.optimizer, ddpm_params)
-
-        if 'lr_scheduler' in self.train_cfg and self.train_cfg.lr_scheduler is not None:
-            self.lr_scheduler = hydra.utils.instantiate(self.train_cfg.lr_scheduler)
-
-        return self.ddpm_optimizer
 

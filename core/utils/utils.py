@@ -2,6 +2,8 @@
 import torch
 import os
 import torch.nn.functional as F
+import random
+import numpy as np
 
 
 
@@ -194,3 +196,34 @@ def test_ensem_partial(self, best_params,dataloader,fea_path=None):
     acc = test_generated_partial(self, mean,dataloader,fea_path=fea_path)
     del best_params
     return acc
+
+class TemporaryRandomSeed:
+    def __init__(self, seed):
+        self.seed = seed
+        self.state = None
+        self.numpy_state = None
+        self.torch_state = None
+        self.cuda_state = None
+
+    def __enter__(self):
+        # 保存当前的随机状态
+        self.state = random.getstate()
+        self.numpy_state = np.random.get_state()
+        self.torch_state = torch.get_rng_state()
+        if torch.cuda.is_available():
+            self.cuda_state = torch.cuda.get_rng_state_all()
+
+        # 设置新的随机种子
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(self.seed)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # 恢复之前的随机状态
+        random.setstate(self.state)
+        np.random.set_state(self.numpy_state)
+        torch.set_rng_state(self.torch_state)
+        if torch.cuda.is_available():
+            torch.cuda.set_rng_state_all(self.cuda_state)

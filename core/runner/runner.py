@@ -62,7 +62,7 @@ def train_generation(cfg):
     init_experiment(cfg)
     system_cls = systems[cfg.system.name]
     system = system_cls(cfg)
-    datamodule = system.get_task().get_param_data()
+    datamodule = system.get_param_data()
     # running
     trainer: Trainer = hydra.utils.instantiate(cfg.system.train.trainer)
     trainer.fit(system, datamodule=datamodule, ckpt_path=cfg.load_system_checkpoint)
@@ -74,7 +74,7 @@ def test_generation(cfg):
     init_experiment(cfg)
     system_cls = systems[cfg.system.name]
     system = system_cls(cfg)
-    datamodule = system.get_task().get_param_data()
+    datamodule = system.get_param_data()
     # running
     trainer: Trainer = hydra.utils.instantiate(cfg.system.train.trainer)
     trainer.test(system, datamodule=datamodule, ckpt_path=cfg.load_system_checkpoint)

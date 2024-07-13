@@ -4,6 +4,8 @@ import pdb
 import hydra.utils
 from statistics import median
 
+import torch
+
 from .base_task import BaseTask
 from core.data.vision_dataset import VisionData
 from core.data.Graph_dataset import GraphCFTData, NodeCFTData
@@ -270,15 +272,29 @@ class NodeCFT(BaseTask):
     def init_task_data(self):
         return NodeCFTData(self.cfg.data)
 
-    def set_param_data(self):
-        param_data = PData(self.cfg.param)
-        self.model = param_data.get_model()
-        self.train_layer = param_data.get_train_layer()
-        return param_data
+    # def set_param_data(self):
+    #     param_data = PData(self.cfg.param)
+    #     self.model = param_data.get_model()
+    #     self.train_layer = param_data.get_train_layer()
+    #     return param_data
+    def get_initialization(self):
+        net = self.build_model()
+        params = []
+        for name, param in net.named_parameters():
+            params.append(param.view(1,-1))
+        return torch.cat(params, dim=-1)
 
-    def get_param_dims(self):
-        param_data = PData(self.cfg.param)
-        return param_data.get_param_dim()
+    def get_param_shape(self):
+        # self.cfg.model.hidden_dim = int(hidden_dim)
+        net = self.build_model()
+        test_shape = [torch.numel(module) for name ,module in net.named_parameters()]
+        test_shape = sum(test_shape)
+        return test_shape
+
+
+    # def get_param_dims(self):
+    #     param_data = PData(self.cfg.param)
+    #     return param_data.get_param_dim()
 
     def test_g_model(self, input, hidden_dim=None):
         if hidden_dim is not None:
@@ -287,21 +303,22 @@ class NodeCFT(BaseTask):
             # import pdb;pdb.set_trace()
         else:
             net = self.model
-        train_layer = self.train_layer
+        # train_layer = self.train_layer
         # test_layer = self.test_layer
+        # 默认 all
         param = input
         target_num = 0
         for name, module in net.named_parameters():
             # print(name)
-            if name in train_layer:
                 target_num += torch.numel(module)
+        train_layer = [name for name, module in net.named_parameters()]
 
         params_num = torch.squeeze(param).shape[0]  # + 30720
         # try:
         #     assert (target_num == params_num)
         # except:
         #     print(f'real_num: {target_num}')
-        param = torch.squeeze(param)
+        param = torch.squeeze(param)[:target_num]
         model = partial_reverse_tomodel(param, net, train_layer).to(param.device)
 
         model.eval()
@@ -333,16 +350,14 @@ class NodeCFT(BaseTask):
         # import pdb;pdb.set_trace()
         else:
             net = self.model
-        train_layer = self.train_layer
-        # test_layer = self.test_layer
         param = input
         target_num = 0
         for name, module in net.named_parameters():
-            if name in train_layer:
-                target_num += torch.numel(module)
-        params_num = torch.squeeze(param).shape[0]  # + 30720
+            target_num += torch.numel(module)
+        train_layer = [name for name, module in net.named_parameters()]
+        # params_num = torch.squeeze(param).shape[0]  # + 30720
         # assert (target_num == params_num)
-        param = torch.squeeze(param)
+        param = torch.squeeze(param)[:target_num]
         model = partial_reverse_tomodel(param, net, train_layer).to(param.device)
 
         model.eval()
@@ -359,7 +374,7 @@ class NodeCFT(BaseTask):
             loss = F.cross_entropy(outputs[self.train_mask], data.y[self.train_mask])
 
             predicted = outputs.argmax(dim=1)
-            total += data.y[self.train_mask].size(0)
+            total = data.y[self.train_mask].shape[0]
             correct += int((predicted[self.train_mask] == data.y[self.train_mask]).sum())
 
         test_loss = loss.item()
@@ -443,11 +458,15 @@ class NodeCFT(BaseTask):
         os.makedirs(tmp_path, exist_ok=True)
         os.makedirs(final_path, exist_ok=True)
 
+        net = net.cuda()
 
         save_model_accs = []
         parameters = []
-        first_epoch_param = None
-        net = net.cuda()
+        initialization = state_part(train_layer, net)
+        init_param = []
+        for key in train_layer:
+            init_param.append(initialization[key].reshape(-1))
+        init_param = torch.cat(init_param, 0)
         # path = './param_data/Cora/generate.pt'
         # params = torch.load(path)
         # accs = []
@@ -461,8 +480,6 @@ class NodeCFT(BaseTask):
             best_acc = max(acc, best_acc)
             # if acc == best_acc:
             #     test_acc = self.test(net, criterion, self.test_mask)
-            if i == 0:
-                first_epoch_param = state_part(train_layer, net)
             if i == (epoch - 1):
                 # print("saving the model")
                 torch.save(net, os.path.join(tmp_path, "whole_model.pth"))
@@ -538,6 +555,7 @@ class NodeCFT(BaseTask):
         # print(f"path {tmp_path} storage usage: {useage_gb:.2f} GB")
 
         state_dic = {
+            'initialization': init_param.cpu().detach(),
             'pdata': batch.cpu().detach(),
             'mean': mean.cpu(),
             'std': std.cpu(),

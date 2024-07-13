@@ -64,7 +64,8 @@ class DDPM(BaseSystem):
     def generate(self, batch, cond, num=10, history=False, initial=None):
         model = self.model.ema if hasattr(self.model, 'ema') else self.model
         model.eval()
-        cond = (cond[0][:num], cond[1][:num])
+        cond = (cond[0][:num], cond[1][:num], cond[2][:num])
+        #shape = (num, batch.shape[1], batch.shape[2])
         shape = (num, batch.shape[1], batch.shape[2])
         sample = self.progressive_samples_fn_simple(
             model,
@@ -112,30 +113,27 @@ class DDPM(BaseSystem):
         mask = pbatch[1].float()[:10].reshape(batch.shape)
         labels = pbatch[3]
         dims = pbatch[4][:10]
+        ini = pbatch[5][:10]
         print(f"Input label: {labels[:10]}")
         batch = self.pre_process(batch)
-        shape_latent = self.pre_process(mask)[:10]
-        outputs = self.generate(batch, (cond,dims), 10)
+        ini_latent = self.pre_process(ini)
+        # shape_latent = self.pre_process(mask)[:10]
+        outputs = self.generate(batch, (cond,dims, ini_latent), 10)
 
-        params = self.post_process(outputs + shape_latent)
+        params = self.post_process(outputs)
         params = params.cpu()
 
         accs = []
-        target_acc = []
         for i in range(params.shape[0]):
             param = params[i].to(batch.device).view(-1)
-            acc, test_loss, output_list = self.task_val_func(param, dims[i][0])
+            acc, test_loss, output_list = self.task_val_func(param, dims[i][0], int(labels[i]))
             accs.append(acc)
-            if int(labels[i]) == 0:
-                target_acc.append(acc)
-        if len(target_acc) == 0:
-            target_acc = [0.0]
-        best_acc = np.max(target_acc)
+        best_acc = np.max(accs)
         print("generated models accuracy:", accs)
-        print("generated models mean accuracy:", np.mean(target_acc))
+        print("generated models mean accuracy:", np.mean(accs))
         print("generated models best accuracy:", best_acc)
         self.log('best_g_acc', best_acc)
-        self.log('mean_g_acc', np.mean(target_acc).item())
+        self.log('mean_g_acc', np.mean(accs).item())
         return {'best_g_acc': best_acc, 'mean_g_acc': np.mean(accs).item()}
 
     def test_step(self, pbatch, batch_idx, **kwargs: Any):
@@ -153,15 +151,17 @@ class DDPM(BaseSystem):
         labels = pbatch[3]
         mask = pbatch[1].float().reshape(batch.shape)
         dims = pbatch[4]
+        ini = pbatch[5]
 
         batch = self.pre_process(batch)
-        shape_latent = self.pre_process(mask)
-        outputs = self.generate(batch, (cond, dims), batch.shape[0])
-        params = self.post_process(outputs + shape_latent)
+        ini_latent = self.pre_process(ini)
+        # shape_latent = self.pre_process(mask)
+        outputs = self.generate(batch, (cond, dims, ini_latent), batch.shape[0])
+        params = self.post_process(outputs)
         accs = []
         for i in range(params.shape[0]):
             param = params[i].view(-1)
-            acc, test_loss, output_list = self.task_func(param, dims[i][0])
+            acc, test_loss, output_list = self.task_func(param, dims[i][0], int(labels[i]))
             accs.append(acc)
 
         lists = {dataset: [] for dataset in self.dataset_list}
@@ -171,15 +171,27 @@ class DDPM(BaseSystem):
             lists[self.dataset_list[label]].append(param.view(1, -1))
             hidden_size[self.dataset_list[label]].append(dims[idx][0])
         for dataset, parameters in lists.items():
-            path = f'./param_data/{dataset}/generate.pt'
+            path = f'./param_data/{dataset}/generate_identity.pt'
             parameters = torch.cat(parameters, dim=0)
             torch.save(parameters, path)
-            torch.save(parameters, f'./param_data/{dataset}/hidden.pt')
+            # torch.save(parameters, f'./param_data/{dataset}/hidden.pt')
             print(f'Save in {path}')
 
+        accs = np.array(accs)
         best_acc = np.max(accs)
-        print(f"Hidden dims: {dims}")
-        print("generated models accuracy:", accs)
+        for i in range(len(self.dataset_list)):
+            idx = torch.where(labels==i)[0].cpu().numpy()
+            dataset_acc = accs[idx]
+            print('-'*100)
+            print(f'Dataset {self.dataset_list[i]} generate res: {dataset_acc}')
+            print("mean accuracy:", np.mean(dataset_acc))
+            print("best accuracy:", np.max(dataset_acc))
+            print("median accuracy:", np.median(dataset_acc))
+            print('-' * 100)
+
+        # print(f"Hidden dims: {dims[:, 0]}")
+        # print(f"Labels : {labels}")
+        # print("generated models accuracy:", accs)
         print("generated models mean accuracy:", np.mean(accs))
         print("generated models best accuracy:", best_acc)
         print("generated models median accuracy:", np.median(accs))
@@ -189,15 +201,16 @@ class DDPM(BaseSystem):
         return {'best_g_acc': best_acc, 'mean_g_acc': np.mean(accs).item(), 'med_g_acc': np.median(accs).item()}
 
     def forward(self, pbatch, **kwargs):
-        batch, cond, shapes = pbatch
+        batch, cond, shapes, ini = pbatch
         # mask = mask.float().reshape(batch.shape)
         batch = self.pre_process(batch)
+        ini_latent = self.pre_process(ini)
         # shape_info = self.pre_process(mask)
         model = self.model
         time = (torch.rand(batch.shape[0]) * self.n_timestep).type(torch.int64).to(batch.device)
 
         noise = None
-        lab = (cond, shapes)
+        lab = (cond, shapes, ini_latent)
         if noise is None:
             noise = torch.randn_like(batch)
         x_t = self.q_sample(batch, time, noise=noise)

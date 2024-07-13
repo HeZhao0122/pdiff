@@ -1,5 +1,5 @@
 defaults:
-  - task: PubMed
+  - task: transfer
   - system: autoencoder
   - _self_
 
@@ -12,10 +12,10 @@ load_system_checkpoint:
 mode: train
 
 seed: 45
-iter_seed: 10
+iter_seed: 3
 process_title: p-diff
 
-output_dir: outputs/PubMed
+output_dir: outputs/transfer
 
 hydra:
   output_subdir: config

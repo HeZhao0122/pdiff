@@ -11,68 +11,97 @@ ae_model:
 #    latent_dim: 1544
 #    kld_weight: 0.01
 
-    _target_: core.module.modules.perceiverAE.PerceiverAutoEncoder
-    dim_lm: 128
-    dim_ae: 64
-    depth: 4
-    dim_head: 64
-    num_encoder_latents: 8
-    num_decoder_latents: 287
-    max_seq_len: 500
-    ff_mult: 4
-    encoder_only: False
-    transformer_decoder: False
-    l2_normalize_latents: False
-#
-#    _target_: core.module.modules.transformer_enc.TF
-#    in_dim: 36681
-#    dim_list: [64, 64, 64, 32000, 64, 64, 64, 4096, 3, 3, 3, 192]
-#    latent_dim: 512
-#    len_token: 16
-#    input_noise_factor: 0.001
-#    latent_noise_factor: 0.5
-#    num_layers: 3
-#    param_layer: 2
-
-#    _target_: core.module.modules.transformer_enc.TFVae
-#    in_dim: 36681
-#    dim_list: [64, 64, 64, 32000, 64, 64, 64, 4096, 3, 3, 3, 192]
-#    latent_dim: 512
-#    len_token: 32
-#    input_noise_factor: 0.001
-#    latent_noise_factor: 0.5
-#    num_layers: 3
-#    kld_weight: 0.1
+#    _target_: core.module.modules.perceiverAE.PerceiverAutoEncoder
+#    dim_lm: 128
+#    dim_ae: 32
+#    depth: 4
+#    dim_head: 64
+#    num_encoder_latents: 32
+#    num_decoder_latents: 937
+#    max_seq_len: 1000
+#    ff_mult: 4
+#    encoder_only: False
+#    transformer_decoder: False
+#    l2_normalize_latents: False
+    _target_: core.module.modules.dvae.AutoencoderKL
+    embed_dim: 4
+    input_key: 'weight'
+    learning_rate: 1.115e-3
+    lossconfig:
+      target: stage1.modules.losses.CustomLosses.Myloss
+      params:
+        #        kl_weight: 0.01
+        kl_weight: 0.000001
+    ddconfig:
+      ddconfig:
+        double_z: True
+        z_channels: 4
+        resolution: 64
+        in_channels: 1
+        my_channels: 1
+        out_ch: 1
+        ch: 128
+        ch_mult: [ 1,1,2 ]  # num_down = len(ch_mult)-1
+        num_res_blocks: 2
+        attn_resolutions: [ 2, 4 ]
+        dropout: 0.0
+        in_dim: 2864
+        fdim: 4096
 
 self_condition: False
 p: 0.8
-in_dim: 36681
+in_dim: 119922
 
 model:
   arch:
     _target_: core.module.wrapper.ema.EMA
     model:
+#      _target_: core.module.modules.OPUnet.UNetModel
+#      image_size: 32
+#      in_channels: 1
+#      model_channels: 256
+#      out_channels: 1
+#      num_res_blocks: 2
+#      attention_resolutions: [ 4, 8 ]   # 32, 16, 8, 4
+#      channel_mult: [ 1,1,1, 2 ]  # 32, 16, 8, 4, 2
+#      num_heads: 2
+#      use_scale_shift_norm: True
+#      resblock_updown: True
+
 #      _target_: core.module.modules.unet.AE_CNN_bottleneck
 #      in_channel: 1
 #      in_dim: 512
 #      cond_dim: 512
 #      latent_dim: 32
-      _target_: core.module.modules.unet.TF
-      in_dim: 512
-      cond_dim: 512
-      latent_dim: 64
-      ff_dim: 512
-      num_layers: 3
-      self_cond: False
+#      _target_: core.module.modules.unet.TF
+#      in_dim: 512
+#      cond_dim: 512
+#      latent_dim: 64
+#      ff_dim: 512
+#      num_layers: 3
+#      self_cond: False
+
 #        _target_: core.module.modules.DiT.DiT
-#        input_size: 512
-#        patch_size: 8
+#        input_size: 1024
+#        patch_size: 4
 #        in_channels: 1
-#        hidden_size: 768
+#        hidden_size: 384
 #        depth: 12
-#        num_heads: 12
+#        num_heads: 6
 #        mlp_ratio: 4.0
 #        learn_sigma: False
+#        cond_dim: 1024
+
+      _target_: core.module.modules.unet.UNet
+      in_channel: 1
+      channel: 64
+      channel_multiplier: [1,1,1,2]
+      n_res_blocks: 4
+      attn_strides: [4, 8]
+      cond_dim: 1024
+
+
+
 
 #     model:
 #       _target_: core.module.modules.od_unet.AE_CNN_bottleneck
@@ -80,8 +109,8 @@ model:
 
 
 beta_schedule:
-  start: 1e-4
-  end: 2e-2
+  start: 0.0015 #1e-4
+  end: 0.0155 #2e-2
   schedule: linear
   n_timestep: 500
 
@@ -90,18 +119,17 @@ model_var_type: fixedlarge
 loss_type: mse
 
 train:
-  split_epoch: 1000
-  datasets: ['PubMed']
+  split_epoch: 2000
   fine_tune_epoch: 2400
   generate_epoch: 200
   optimizer:
     _target_: torch.optim.AdamW
-    lr: 1e-3
+    lr: 1e-4
     weight_decay: 2e-5
 
   ae_optimizer:
     _target_: torch.optim.AdamW
-    lr: 1e-2
+    lr: 1e-3
     weight_decay: 2e-6
 
   lr_scheduler:
@@ -109,9 +137,9 @@ train:
   trainer:
     _target_: pytorch_lightning.Trainer
     _convert_: all
-    max_epochs: 20000
+    max_epochs: 12000
     check_val_every_n_epoch:
-    val_check_interval : 3000
+    val_check_interval : 600
     log_every_n_steps: 8
     limit_val_batches: 1
     limit_test_batches: 1
@@ -122,11 +150,11 @@ train:
 
     callbacks:
     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
-      monitor: 'best_g_acc'
+      monitor: 'mean_g_acc'
       mode: 'max'
       save_top_k: 1
       save_last: true
-      filename: 'ddpm-{epoch}-{best_g_acc:.4f}'
+      filename: 'ddpm-{epoch}-{mean_g_acc:.4f}'
 
 #     - _target_: pytorch_lightning.callbacks.ModelCheckpoint
 # #       dirpath: ${output_dir}/${system.name}/checkpoints

@@ -1,49 +1,49 @@
 name: nodecft
 
 data:
-  data_root: data/CiteSeer
-  dataset: CiteSeer
+  data_root: data/Cora3
+  dataset: Cora3
   seed: 44
 
 # model for data
 model:
   _target_: models.nodecft.BaseGraph
-  in_feat: 3703
+  in_feat: 1433
   hidden_dim: 32
-  num_class: 6
+  num_class: 3
   aggr: 'gat'
   layers: 3
+
+#  _target_: models.nodecft.EmbeddingGraph
+#  node_num: 19717
+#  hidden_dim: 64
+#  num_class: 3
+#  aggr: 'gat'
+#  layers: 2
 
 # optimizer for training task model
 optimizer:
   _target_: torch.optim.SGD
   lr: 0.1
-  momentum: 0.95
+  momentum: 0.9
   weight_decay: 0.0005
 
 # lr scheduler for training task optimizer
 lr_scheduler:
   _target_: torch.optim.lr_scheduler.MultiStepLR
-  milestones: [50，100]
+  milestones: [100,200]
   gamma: 0.2
 
 epoch: 200
 save_num_model: 25
 train_layer: 'all'
+# train_layer: [ 'conv_layers.2.bias', 'conv_layers.2.lin.weight']
 # train_layer: ['conv_layers.0.att_src', 'conv_layers.0.att_dst', 'conv_layers.0.bias', 'conv_layers.0.lin.weight', 'conv_layers.1.att_src', 'conv_layers.1.att_dst', 'conv_layers.1.bias', 'conv_layers.1.lin.weight', ]
-# train_layer: ['out.bias', 'out.lin.weight']
+# train_layer: ['conv_layers.1.att_src', 'conv_layers.1.att_dst', 'conv_layers.1.bias', 'conv_layers.1.lin.weight']
 
 # parameter data root
 param:
-  data_root: param_data/CiteSeer/data.pt
-  k: 50
+  data_root: param_data/Cora/data.pt
+  k: 25
   token_length: 128
   num_workers: 4
-  num_encoder_latents: 8
-  dim_ae: 64
-  train_list: ['CiteSeer1', 'CiteSeer2']
-  test_list: ['CiteSeer1', 'CiteSeer2', 'CiteSeer3']
-  test_shape: [119782]
-  test_dim: [32]
-
-

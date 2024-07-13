@@ -56,7 +56,7 @@ class ODVAE(nn.Module):
         self.encoder = ODEncoder(enc_dim_list, fold_rate, kernel_size, enc_channel_list)
         self.decoder = ODDecoder(dec_dim_list, fold_rate, kernel_size, dec_channel_list)
 
-        self.fc_mu =  nn.Linear(latent_dim, latent_dim)
+        self.fc_mu = nn.Linear(latent_dim, latent_dim)
         self.fc_var = nn.Linear(latent_dim, latent_dim)
 
     def encode(self, x, **kwargs):

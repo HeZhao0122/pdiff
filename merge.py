@@ -12,7 +12,13 @@ def load(name):
         'PubMed': datasets.Planetoid(root=f'./data/PubMed', name='PubMed'),
         'DBLP': datasets.CitationFull(root=f'./data/DBLP', name='DBLP'),
         'CiteSeer': datasets.Planetoid(root=f'./data/CiteSeer', name='CiteSeer'),
-        'Cora': datasets.Planetoid(root=f'./data/Cora', name='Cora')
+        'Cora': datasets.Planetoid(root=f'./data/Cora', name='Cora'),
+        'CiteSeer1': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/CiteSeer1.pt'), None],
+        'CiteSeer2': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/CiteSeer2.pt'), None],
+        'CiteSeer3': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/CiteSeer3.pt'), None],
+        'Cora1': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/Cora1.pt'), None],
+        'Cora2': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/Cora2.pt'), None],
+        'Cora3': [torch.load(f'/home/zhaohe/NNDF/graph_utils/data/Cora3.pt'), None]
     }
     return data_cls[name][0]
 
@@ -21,12 +27,13 @@ def load_params(dataset, lr, m, seed, hidden_dim):
     path = f'./param_data/{dataset}/all_seed_all/{seed}/{hidden_dim}_{lr}_{m}/data.pt'
     state = torch.load(path, map_location=torch.device(device))
     params = state['pdata']
+    initial = state['initialization']
     performance = state['performance']
     best = max(performance)
     median = statistics.median(performance)
     mean = statistics.mean(performance)
 
-    return params, [best, mean, median]
+    return params, [best, mean, median], initial
 
 
 def merge_dataset(dataset, seed_num):
@@ -36,7 +43,7 @@ def merge_dataset(dataset, seed_num):
     all_params = []
     best_all, median_all, mean_all = [],[],[]
     for seed in tqdm(range(seed_num)):
-        params, (best, mean, median) = load_params(dataset, seed)
+        params, (best, mean, median), initial = load_params(dataset, seed)
         all_params.append(params)
         best_all.append(best)
         median_all.append(median)
@@ -66,6 +73,7 @@ def load_state_dict(dataset_list):
 def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
     all_param = []
     all_label = []
+    all_init = []
     length = []
     dims = []
     for idx, dataset in enumerate(dataset_list):
@@ -73,14 +81,16 @@ def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
         feature_size = graph.x.shape[1]
         class_num = max(graph.y) + 1
         data_param = []
+        initial_param = []
         data_performance = []
         dim_sets = []
         for seed in seeds:
             for lr in lrs:
                 for m in moms:
                     for dim in hidden_dims:
-                        param, performance = load_params(dataset, lr, m, seed, dim)
+                        param, performance, initial = load_params(dataset, lr, m, seed, dim)
                         data_param.append(param)
+                        initial_param.append(initial.expand(param.shape))
                         data_performance.append(performance[1])
                         dim_sets += [dim] * param.shape[0]
         # data_param = torch.cat(data_param, dim=0)
@@ -89,43 +99,49 @@ def merge_all(dataset_list, lrs, moms, seeds, hidden_dims):
         print(f'{dataset}: {statistics.mean(data_performance)}')
         all_param += data_param
         all_label.append(label)
+        all_init += initial_param
         length += [p.shape[1] for p in data_param]
     padding_length = [max(length)-i for i in length]
     print(max(length))
 
     padded_param = []
     padded_mask = []
+    padded_initial = []
 
-    for pad_length, param in zip(padding_length, all_param):
+    for pad_length, param, initial in zip(padding_length, all_param, all_init):
         mask = torch.ones(param.shape)
         padding = torch.zeros((param.shape[0], pad_length))
         param = torch.cat((param, padding), dim=1)
+        initial = torch.cat((initial, padding), dim=1)
         padded_param.append(param)
+        padded_initial.append(initial)
 
         mask = torch.cat((mask, padding), dim=1)
         padded_mask.append(mask)
 
     padded_mask = torch.cat(padded_mask, dim=0)
     padded_param = torch.cat(padded_param, dim=0)
+    padded_initial = torch.cat(padded_initial, dim=0)
     all_label = torch.cat(all_label)
     dims = torch.tensor(dims)
-    state_dict = load_state_dict(['PubMed'])
+    state_dict = load_state_dict(['Cora'])
     state_dict['pdata'] = padded_param
     state_dict['mask'] = padded_mask
+    state_dict['initial'] = padded_initial
     state_dict['label'] = all_label
     state_dict['hidden_dim'] = dims
     state_dict['performance'] = []
     state_dict['dataset_list'] = dataset_list
 
-    new_path = f'./param_data/PubMed/data.pt'
+    new_path = f'./param_data/Cora/data_transfer.pt'
     torch.save(state_dict, new_path)
 
 
 
 lrs = [0.1, 0.05]
 momentum = [0.95]
-seeds = [0]
-hidden_dims = [20,30,40,50,64]
-dataset_list = ['PubMed']
+seeds = [0, 1, 2]
+hidden_dims = [32]
+dataset_list = ['CiteSeer', 'Cora']
 merge_all(dataset_list, lrs, momentum, seeds, hidden_dims)
 # merge_dataset(dataset, seed_num)
